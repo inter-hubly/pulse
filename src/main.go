@@ -3,8 +3,13 @@ package main
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/inter-hubly/pilot/database/elasticsearch"
+	"github.com/inter-hubly/pilot/server"
+	"github.com/inter-hubly/pulse/dto"
+	"github.com/inter-hubly/pulse/internal/repository"
 )
 
 var upgrader = websocket.Upgrader{
@@ -13,14 +18,19 @@ var upgrader = websocket.Upgrader{
 }
 
 var clients = make(map[*websocket.Conn]bool)
-var broadcast = make(chan Message)
-
-type Message struct {
-	Username string `json:"username"`
-	Message  string `json:"message"`
-}
+var broadcast = make(chan dto.Message)
 
 func main() {
+	server.FillConfigEnvironment()
+
+	elasticsearch.NewConn(
+		elasticsearch.WithUrl([]string{server.GetElasticSearch().Host}),
+		elasticsearch.WithUsernameAndPassword(
+			server.GetElasticSearch().Username,
+			server.GetElasticSearch().Password,
+		),
+	)
+
 	fs := http.FileServer(http.Dir("."))
 	http.Handle("/", fs)
 
@@ -28,8 +38,8 @@ func main() {
 
 	go handleMessages()
 
-	log.Println("HTTP server started on :8080")
-	err := http.ListenAndServe(":8080", nil)
+	log.Println("HTTP server started on :8082")
+	err := http.ListenAndServe(":8082", nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
@@ -45,14 +55,17 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 	clients[ws] = true
 
 	for {
-		var msg Message
-		err := ws.ReadJSON(&msg)
+		app := repository.NewWhatsApp()
+		message, err := app.GetMessage()
 		if err != nil {
-			log.Printf("error: %v", err)
-			delete(clients, ws)
-			break
+			log.Println(err)
 		}
-		broadcast <- msg
+
+		time.Sleep(1 * time.Second)
+		for _, msg := range message {
+			broadcast <- msg
+
+		}
 	}
 }
 
