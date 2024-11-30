@@ -1,5 +1,7 @@
-module github.com/inter-hubly/pilot
+module github.com/inter-hubly/pulse
 
 go 1.23.1
 
-require golang.org/x/net v0.31.0
+//replace github.com/inter-hubly/pilot => /home/saimon/Documents/Hubly/pilot //Linux
+
+require github.com/gorilla/websocket v1.5.3
