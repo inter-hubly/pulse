@@ -4,7 +4,15 @@ go 1.23.1
 
 replace github.com/inter-hubly/pilot => /home/saimon/Documents/Hubly/pilot //Linux
 
-require github.com/gorilla/websocket v1.5.3
+require (
+	github.com/gorilla/websocket v1.5.3
+	github.com/stretchr/testify v1.9.0
+)
+
+require (
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
+)
 
 require (
 	github.com/elastic/elastic-transport-go/v8 v8.6.0 // indirect

@@ -1,0 +1,10 @@
+config:
+  env: development
+  port: 8081
+elasticSearch:
+  host: http://localhost:9200
+redis:
+  host: localhost:6379
+  database: 0
+ampq:
+  host: amqp://guest:guest@localhost:5672/

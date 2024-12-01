@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"log"
 	"sync"
 
 	"github.com/inter-hubly/pilot/database/elasticsearch"
@@ -10,7 +9,7 @@ import (
 )
 
 type WhatsApp interface {
-	GetMessage() ([]dto.Message, error)
+	GetAllMessage(ctx context.Context, id string) ([]dto.Message, error)
 }
 
 var (
@@ -32,24 +31,36 @@ func NewWhatsApp() *whatsAppRepository {
 	return whatsApp
 }
 
-func (w *whatsAppRepository) GetMessage() ([]dto.Message, error) {
-	ctx := context.Background()
+func (w *whatsAppRepository) GetAllMessage(ctx context.Context, id string) ([]dto.Message, error) {
 	query := map[string]interface{}{
 		"query": map[string]interface{}{
-			"match_all": map[string]interface{}{},
+			"bool": map[string]interface{}{
+				"must": []map[string]interface{}{
+					{
+						"match": map[string]interface{}{
+							"ownerId": id,
+						},
+					},
+				},
+			},
 		},
 	}
 
-	all, err := w.elastic.FindAll(ctx, "whatsapp.ready", query)
+	all, err := w.elastic.FindAll(ctx, elasticIndex, query)
 	if err != nil {
 		return nil, err
 	}
 	sms := make([]dto.Message, 0)
 	for _, v := range all.Hits.Hits {
-		log.Print(v)
-		sms = append(sms, dto.Message{
-			Username: "ok",
-		})
+		response := v.(map[string]interface{})["_source"].(map[string]interface{})
+		var dto dto.Message
+		if response["type"] == "template" {
+			dto.Message = response["templateName"].(string)
+		} else {
+			dto.Message = response["message"].(string)
+		}
+		dto.Username = response["toPhoneId"].(string)
+		sms = append(sms, dto)
 	}
 	return sms, nil
 }
