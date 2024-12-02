@@ -6,6 +6,11 @@ import (
 	"github.com/inter-hubly/pulse/internal/domain/entity"
 )
 
+type MessageGroups interface {
+	GetConversations(ctx context.Context) map[string][]entity.Conversation
+	AddConversation(ctx context.Context, id string, conversation entity.Conversation)
+}
+
 type messageGroups struct {
 	conversations map[string][]entity.Conversation
 }

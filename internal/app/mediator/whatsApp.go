@@ -6,11 +6,11 @@ import (
 
 	"github.com/inter-hubly/pulse/internal/app/cache"
 	"github.com/inter-hubly/pulse/internal/app/repository"
-	"github.com/inter-hubly/pulse/internal/domain/dto"
+	"github.com/inter-hubly/pulse/internal/domain/entity"
 )
 
 type WhatsApp interface {
-	GetAllMessage(ctx context.Context, id string) ([]dto.Message, error)
+	GetAllMessage(ctx context.Context, id string) ([]entity.Conversation, error)
 }
 
 var (
@@ -33,16 +33,21 @@ func NewWhatsApp() *whatsAppMediator {
 	return whatsApp
 }
 
-func (m *whatsAppMediator) GetAllMessage(ctx context.Context, id string) (message []dto.Message, err error) {
-	message, err = m.whatsAppCache.GetAllMessage(ctx, id)
+func (m *whatsAppMediator) GetAllMessage(ctx context.Context, id string) ([]entity.Conversation, error) {
+	messages, err := m.whatsAppCache.GetAllMessage(ctx, id)
 	if err == nil {
-		return message, nil
+		return messages, nil
 	}
 
-	message, err = m.whatsAppRepository.GetAllMessage(ctx, id)
+	repositoryMessages, err := m.whatsAppRepository.GetAllMessage(ctx, id)
+	for _, message := range repositoryMessages {
+		entity.
+			NewConversation(ctx, message.GetOwner(), entity.ConversationTypeWhatsApp).
+			PushMessage(ctx, &message)
+	}
 	if err != nil {
 		return nil, err
 	}
-	m.whatsAppCache.SaveAllMessageInCache(ctx, id, message)
-	return message, nil
+	m.whatsAppCache.SaveAllMessageInCache(ctx, id, messages)
+	return messages, nil
 }

@@ -5,15 +5,14 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/inter-hubly/pulse/internal/domain/dto"
+	"github.com/inter-hubly/pulse/internal/domain/aggregation"
+	"github.com/inter-hubly/pulse/internal/domain/entity"
 )
 
-var messages map[string][]dto.Message
-
 type WhatsApp interface {
-	GetAllMessage(ctx context.Context, id string) ([]dto.Message, error)
-	SaveMessage(ctx context.Context, id string, message dto.Message)
-	SaveAllMessageInCache(ctx context.Context, id string, message []dto.Message)
+	GetAllMessage(ctx context.Context, id string) ([]entity.Conversation, error)
+	SaveMessage(ctx context.Context, id string, message entity.Conversation)
+	SaveAllMessageInCache(ctx context.Context, id string, message []entity.Conversation)
 }
 
 var (
@@ -22,30 +21,33 @@ var (
 )
 
 type whatsAppCache struct {
+	conversations aggregation.MessageGroups
 }
 
 func NewWhatsApp() *whatsAppCache {
 	whatsAppOnce.Do(func() {
-		whatsApp = &whatsAppCache{}
-		messages = make(map[string][]dto.Message)
+		whatsApp = &whatsAppCache{
+			conversations: aggregation.NewMessageGroups(),
+		}
 	})
 	return whatsApp
 }
 
-func (w *whatsAppCache) GetAllMessage(ctx context.Context, id string) ([]dto.Message, error) {
-	if value, ok := messages[id]; ok {
+func (w *whatsAppCache) GetAllMessage(ctx context.Context, id string) ([]entity.Conversation, error) {
+
+	if value, ok := w.conversations.GetConversations(ctx)[id]; ok {
 		return value, nil
 	}
 	return nil, errors.New("not found")
 }
 
-func (w *whatsAppCache) SaveMessage(ctx context.Context, id string, message dto.Message) {
-	if value, ok := messages[id]; ok {
+func (w *whatsAppCache) SaveMessage(ctx context.Context, id string, message entity.Conversation) {
+	if value, ok := w.conversations.GetConversations(ctx)[id]; ok {
 		value = append(value, message)
 	}
-	messages[id] = []dto.Message{message}
+	w.conversations.AddConversation(ctx, id, message)
 }
 
-func (w *whatsAppCache) SaveAllMessageInCache(ctx context.Context, id string, message []dto.Message) {
-	messages[id] = message
+func (w *whatsAppCache) SaveAllMessageInCache(ctx context.Context, id string, message []entity.Conversation) {
+	w.conversations.GetConversations(ctx)[id] = message
 }

@@ -1,12 +1,12 @@
 package valueobject
 
 type Message struct {
-	owner   bool   `json:"owner"`
+	owner   string `json:"owner"`
 	message string `json:"message"`
 	time    int64  `json:"time"`
 }
 
-func NewMessage(owner bool, message string, time int64) *Message {
+func NewMessage(owner, message string, time int64) *Message {
 	return &Message{
 		owner:   owner,
 		message: message,
@@ -16,4 +16,8 @@ func NewMessage(owner bool, message string, time int64) *Message {
 
 func (m *Message) GetMessage() string {
 	return m.message
+}
+
+func (m *Message) GetOwner() string {
+	return m.owner
 }

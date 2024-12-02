@@ -3,10 +3,10 @@ package controller
 import (
 	"encoding/json"
 	"io"
-	"log"
 	"net/http"
 	"sync"
 
+	"github.com/inter-hubly/pulse/internal/app/service"
 	"github.com/inter-hubly/pulse/internal/domain/dto"
 	"github.com/inter-hubly/pulse/internal/infraestructure/server"
 )
@@ -24,15 +24,17 @@ var (
 )
 
 type chatGroup struct {
-	channel   chan dto.Message
-	websocket server.WebSocket
+	channel         chan dto.Message
+	websocket       server.WebSocket
+	whatsAppService service.WhatsApp
 }
 
 func NewChatGroup() *chatGroup {
 	chatGroupOnce.Do(func() {
 		chatGroupController = &chatGroup{
-			channel:   make(chan dto.Message),
-			websocket: server.NewWebSocket(),
+			channel:         make(chan dto.Message),
+			websocket:       server.NewWebSocket(),
+			whatsAppService: service.NewWhatsApp(),
 		}
 	})
 	return chatGroupController
@@ -60,7 +62,6 @@ func (c *chatGroup) GetAllMessages(w http.ResponseWriter, r *http.Request) {
 func (c *chatGroup) ReceiveMessage(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "Erro ao ler o corpo da requisição", http.StatusInternalServerError)
 		return
 	}
 	defer r.Body.Close()
@@ -68,10 +69,8 @@ func (c *chatGroup) ReceiveMessage(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		var message dto.Message
 		if err = json.Unmarshal(body, &message); err != nil {
-			http.Error(w, "Erro ao decodificar JSON", http.StatusBadRequest)
 			return
 		}
-		log.Print("Mandando mensagem ", message)
 		chatGroupController.channel <- message
 	}()
 
