@@ -44,6 +44,7 @@ func (m *whatsAppMediator) GetAllMessage(ctx context.Context, id string) ([]enti
 		entity.
 			NewConversation(ctx, message.GetOwner(), entity.ConversationTypeWhatsApp).
 			PushMessage(ctx, &message)
+		sss
 	}
 	if err != nil {
 		return nil, err
