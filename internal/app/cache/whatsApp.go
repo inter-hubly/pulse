@@ -5,7 +5,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/inter-hubly/pulse/dto"
+	"github.com/inter-hubly/pulse/internal/domain/dto"
 )
 
 var messages map[string][]dto.Message

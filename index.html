@@ -21,12 +21,41 @@
 <body>
 <ul id="messages"></ul>
 <form id="form">
-    <input id="username" type="text" placeholder="Username" required>
+    <input id="username" type="text" placeholder="Username" required disabled>
     <input id="message" type="text" placeholder="Message" required>
     <button type="submit">Send</button>
 </form>
 <script>
-    const ws = new WebSocket("ws://localhost:8082/ws");
+    const userId = "515719138282305"
+    const numberId = "15551817023"
+    document.getElementById("username").value = numberId;
+    function fetchMessages() {
+        fetch("http://localhost:8082/messages", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "userId": userId,
+                "number": numberId
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Erro na resposta: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(messages => {
+                const messagesList = document.getElementById("messages");
+                messages.forEach(msg => {
+                    const item = document.createElement("li");
+                    item.textContent = msg.username + ": " + msg.message;
+                    messagesList.appendChild(item);
+                });
+            })
+            .catch(error => console.error("Erro ao buscar mensagens:", error));
+    }
+
+    const ws = new WebSocket(`ws://localhost:8082/ws?user=${userId}`);
 
     ws.onmessage = function(event) {
         const msg = JSON.parse(event.data);
@@ -34,14 +63,19 @@
         item.textContent = msg.username + ": " + msg.message;
         document.getElementById("messages").appendChild(item);
     };
-
+    
     document.getElementById("form").onsubmit = function(event) {
         event.preventDefault();
         const username = document.getElementById("username").value;
         const message = document.getElementById("message").value;
         ws.send(JSON.stringify({ username, message }));
-        document.getElementById("message").value = '';
+        document.getElementById("message").value = ''; 
+    };
+    
+    window.onload = function() {
+        fetchMessages();
     };
 </script>
+
 </body>
 </html>

@@ -4,9 +4,9 @@ import (
 	"context"
 	"sync"
 
-	"github.com/inter-hubly/pulse/dto"
-	"github.com/inter-hubly/pulse/internal/cache"
-	"github.com/inter-hubly/pulse/internal/repository"
+	"github.com/inter-hubly/pulse/internal/app/cache"
+	"github.com/inter-hubly/pulse/internal/app/repository"
+	"github.com/inter-hubly/pulse/internal/domain/dto"
 )
 
 type WhatsApp interface {
