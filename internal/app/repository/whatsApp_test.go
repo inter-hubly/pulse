@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// mockgen -source=/home/saimon/Documents/Hubly/pulse/internal/app/repository/whatsApp.go  -destination=/home/saimon/Documents/Hubly/pulse/internal/app/repository/whatsApp_mock.go -package=repository
+
 func TestWhatsApp(t *testing.T) {
 	os.Setenv("ENVIRONMENT", "test")
 	server.MockStartEnv("../../")

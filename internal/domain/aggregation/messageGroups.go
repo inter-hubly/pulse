@@ -2,32 +2,35 @@ package aggregation
 
 import (
 	"context"
+	"errors"
 
 	"github.com/inter-hubly/pulse/internal/domain/entity"
 )
 
 type MessageGroups interface {
-	GetConversations(ctx context.Context) map[string][]entity.Conversation
-	AddConversation(ctx context.Context, id string, conversation entity.Conversation)
+	GetConversationById(ctx context.Context, toId string) (entity.Conversation, error)
+	AddConversation(ctx context.Context, toId string, conversation entity.Conversation)
 }
 
 type messageGroups struct {
-	conversations map[string][]entity.Conversation
+	ownerId       string
+	conversations map[string]entity.Conversation
 }
 
-func NewMessageGroups() *messageGroups {
+func NewMessageGroups(ownerId string) *messageGroups {
 	return &messageGroups{
-		conversations: make(map[string][]entity.Conversation),
+		ownerId:       ownerId,
+		conversations: make(map[string]entity.Conversation),
 	}
 }
 
-func (w *messageGroups) GetConversations(ctx context.Context) map[string][]entity.Conversation {
-	return w.conversations
+func (w *messageGroups) AddConversation(ctx context.Context, toId string, conversation entity.Conversation) {
+	w.conversations[toId] = conversation
 }
 
-func (w *messageGroups) AddConversation(ctx context.Context, id string, conversation entity.Conversation) {
-	if _, ok := w.conversations[id]; ok {
-		w.conversations[id] = append(w.conversations[id], conversation)
+func (w *messageGroups) GetConversationById(ctx context.Context, toId string) (entity.Conversation, error) {
+	if conversation, ok := w.conversations[toId]; ok {
+		return conversation, nil
 	}
-	w.conversations[id] = []entity.Conversation{conversation}
+	return nil, errors.New("conversation not found")
 }

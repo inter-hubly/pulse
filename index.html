@@ -12,6 +12,7 @@
             height: 200px;
             overflow-y: scroll;
         }
+
         #messages li {
             padding: 8px;
             border-bottom: 1px solid #ddd;
@@ -29,8 +30,9 @@
     const userId = "515719138282305"
     const numberId = "15551817023"
     document.getElementById("username").value = numberId;
+
     function fetchMessages() {
-        fetch("http://localhost:8082/messages", {
+        fetch(`http://localhost:8082/messages?user=${userId}`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -57,22 +59,27 @@
 
     const ws = new WebSocket(`ws://localhost:8082/ws?user=${userId}`);
 
-    ws.onmessage = function(event) {
+    ws.onmessage = function (event) {
         const msg = JSON.parse(event.data);
         const item = document.createElement("li");
         item.textContent = msg.username + ": " + msg.message;
         document.getElementById("messages").appendChild(item);
     };
-    
-    document.getElementById("form").onsubmit = function(event) {
+
+    document.getElementById("form").onsubmit = function (event) {
         event.preventDefault();
         const username = document.getElementById("username").value;
         const message = document.getElementById("message").value;
-        ws.send(JSON.stringify({ username, message }));
-        document.getElementById("message").value = ''; 
+        ws.send(JSON.stringify({
+            "toId": "+5548991784586",
+            "ownerId": username,
+            "message": message
+        }));
+
+        document.getElementById("message").value = '';
     };
-    
-    window.onload = function() {
+
+    window.onload = function () {
         fetchMessages();
     };
 </script>

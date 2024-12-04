@@ -11,10 +11,11 @@ import (
 	"github.com/inter-hubly/pilot/hlog"
 	"github.com/inter-hubly/pulse/internal/app/mediator"
 	"github.com/inter-hubly/pulse/internal/domain/dto"
+	"github.com/inter-hubly/pulse/internal/domain/valueobject"
 )
 
 type WhatsApp interface {
-	GetAllMessage(ctx context.Context) ([]dto.Message, error)
+	GetAllMessage(ctx context.Context, ownerId, toId string) ([]*valueobject.Message, error)
 	SendMessage(ctx context.Context, message dto.Message) error
 }
 
@@ -37,8 +38,12 @@ func NewWhatsApp() *whatsAppService {
 	return whatsApp
 }
 
-func (s *whatsAppService) GetAllMessage(ctx context.Context) ([]dto.Message, error) {
-	return s.whatsAppMediator.GetAllMessage(ctx, "515719138282305")
+func (s *whatsAppService) GetAllMessage(ctx context.Context, ownerId, toId string) ([]*valueobject.Message, error) {
+	conversation, err := s.whatsAppMediator.GetConversation(ctx, ownerId, toId)
+	if err != nil {
+		return nil, err
+	}
+	return conversation.GetConversation(ctx).GetMessages(ctx), nil
 }
 
 func (s *whatsAppService) SendMessage(ctx context.Context, message dto.Message) error {

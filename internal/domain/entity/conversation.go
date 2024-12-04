@@ -13,9 +13,11 @@ const (
 )
 
 type Conversation interface {
-	GetConversation(ctx context.Context) []*valueobject.Message
+	GetId(ctx context.Context) string
+	GetConversation(ctx context.Context) *conversation
 	PushConversation(ctx context.Context, v []*valueobject.Message)
 	PushMessage(ctx context.Context, v *valueobject.Message)
+	GetMessages(ctx context.Context) []*valueobject.Message
 }
 
 type conversation struct {
@@ -28,6 +30,7 @@ func NewConversation(ctx context.Context, id string, convType ConversationType) 
 	return &conversation{
 		id:               id,
 		conversationType: convType,
+		messages:         make([]*valueobject.Message, 0),
 	}
 }
 
@@ -37,10 +40,18 @@ func (c *conversation) PushConversation(ctx context.Context, v []*valueobject.Me
 }
 
 // GetConversation get the current conversation
-func (c *conversation) GetConversation(ctx context.Context) []*valueobject.Message {
-	return c.messages
+func (c *conversation) GetConversation(ctx context.Context) *conversation {
+	return c
 }
 
 func (c *conversation) PushMessage(ctx context.Context, v *valueobject.Message) {
 	c.messages = append(c.messages, v)
+}
+
+func (c *conversation) GetMessages(ctx context.Context) []*valueobject.Message {
+	return c.messages
+}
+
+func (c *conversation) GetId(ctx context.Context) string {
+	return c.id
 }

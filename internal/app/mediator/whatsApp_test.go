@@ -4,29 +4,60 @@ import (
 	"context"
 	"os"
 	"testing"
+	"time"
 
+	"github.com/golang/mock/gomock"
 	"github.com/inter-hubly/pilot/database/elasticsearch"
 	"github.com/inter-hubly/pilot/server"
+	"github.com/inter-hubly/pulse/internal/app/cache"
+	"github.com/inter-hubly/pulse/internal/app/repository"
+	"github.com/inter-hubly/pulse/internal/domain/valueobject"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestWhatsAppMediator(t *testing.T) {
 	os.Setenv("ENVIRONMENT", "test")
-	server.MockStartEnv("../../")
-	host := server.GetElasticSearch().Host
+	server.MockStartEnv("../../../")
 
+	ctx := context.Background()
+	host := server.GetElasticSearch().Host
 	elasticsearch.NewConn(elasticsearch.WithUrl([]string{host}))
 
-	mediator := NewWhatsApp()
+	ctrl := gomock.NewController(t)
+	repository := repository.NewMockWhatsApp(ctrl)
 
-	t.Run("need to get all values", func(t *testing.T) {
-		ctx := context.Background()
-		message, err := mediator.GetAllMessage(ctx, "515719138282305")
-		assert.Nil(t, err)
-		assert.NotNil(t, message)
+	repository.EXPECT().GetAllMessage(gomock.Any(), gomock.Any(), gomock.Any()).Return(
+		[]*valueobject.Message{
+			valueobject.NewMessage("123456", "first_ok", time.Now().Unix()),
+			valueobject.NewMessage("123456", "second_ok", time.Now().Unix()),
+			valueobject.NewMessage("123456", "third_ok", time.Now().Unix()),
+			valueobject.NewMessage("515719138282305", "fourth_ok", time.Now().Unix()),
+		}, nil,
+	)
 
-		allMessage, err := mediator.whatsAppCache.GetAllMessage(ctx, "515719138282305")
-		assert.Nil(t, err)
-		assert.NotNil(t, allMessage)
-	})
+	mediator := &whatsAppMediator{
+		whatsAppRepository: repository,
+		whatsAppCache:      cache.NewWhatsApp(),
+	}
+	for _, v := range []struct {
+		testName string
+		useCache bool
+	}{
+		{
+			testName: "Need get all message and no use cache",
+		},
+		{
+			testName: "Need get all message and use cache",
+		},
+	} {
+		t.Run(v.testName, func(t *testing.T) {
+			message, err := mediator.GetConversation(ctx, "515719138282305", "123456")
+			if v.useCache {
+				message, err = mediator.GetConversation(ctx, "515719138282305", "123456")
+			}
+
+			assert.Nil(t, err)
+			assert.NotNil(t, message)
+		})
+	}
 }

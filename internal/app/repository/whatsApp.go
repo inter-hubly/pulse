@@ -10,7 +10,7 @@ import (
 )
 
 type WhatsApp interface {
-	GetAllMessage(ctx context.Context, id string) ([]valueobject.Message, error)
+	GetAllMessage(ctx context.Context, id, toId string) ([]*valueobject.Message, error)
 }
 
 var (
@@ -32,7 +32,7 @@ func NewWhatsApp() *whatsAppRepository {
 	return whatsApp
 }
 
-func (w *whatsAppRepository) GetAllMessage(ctx context.Context, id string) ([]valueobject.Message, error) {
+func (w *whatsAppRepository) GetAllMessage(ctx context.Context, id, toId string) ([]*valueobject.Message, error) {
 	query := map[string]interface{}{
 		"query": map[string]interface{}{
 			"bool": map[string]interface{}{
@@ -51,7 +51,7 @@ func (w *whatsAppRepository) GetAllMessage(ctx context.Context, id string) ([]va
 	if err != nil {
 		return nil, err
 	}
-	sms := make([]valueobject.Message, 0)
+	sms := make([]*valueobject.Message, 0)
 	for _, v := range all.Hits.Hits {
 		response := v.(map[string]interface{})["_source"].(map[string]interface{})
 		var dto *valueobject.Message
@@ -64,7 +64,7 @@ func (w *whatsAppRepository) GetAllMessage(ctx context.Context, id string) ([]va
 		} else {
 			dto = valueobject.NewMessage(sender, response["message"].(string), time.Now().Unix())
 		}
-		sms = append(sms, *dto)
+		sms = append(sms, dto)
 	}
 	return sms, nil
 }

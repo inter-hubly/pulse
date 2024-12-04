@@ -1,18 +1,21 @@
 package server
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"sync"
 
 	"github.com/gorilla/websocket"
-	"github.com/inter-hubly/pilot/broker"
 	"github.com/inter-hubly/pilot/hlog"
+	"github.com/inter-hubly/pulse/internal/app/mediator"
 	"github.com/inter-hubly/pulse/internal/domain/dto"
+	"github.com/inter-hubly/pulse/internal/domain/valueobject"
 )
 
 type WebSocket interface {
-	HandleWebSocket(w http.ResponseWriter, r *http.Request, sendChan <-chan dto.Message)
+	HandleWebSocket(ctx context.Context, w http.ResponseWriter, r *http.Request, sendChan <-chan dto.Message)
 }
 
 var (
@@ -21,15 +24,15 @@ var (
 )
 
 type webSocket struct {
-	connection *websocket.Conn
-	upGrader   websocket.Upgrader
-	broker     broker.Connection
+	connection       *websocket.Conn
+	upGrader         websocket.Upgrader
+	whatsAppMediator mediator.WhatsApp
 }
 
 func NewWebSocket() *webSocket {
 	webSocketOnce.Do(func() {
 		webSocketServer = &webSocket{
-			broker: broker.GetConnection(),
+			whatsAppMediator: mediator.NewWhatsApp(),
 			upGrader: websocket.Upgrader{
 				ReadBufferSize:  1024,
 				WriteBufferSize: 1024,
@@ -44,7 +47,7 @@ func NewWebSocket() *webSocket {
 	return webSocketServer
 }
 
-func (s *webSocket) HandleWebSocket(w http.ResponseWriter, r *http.Request, sendChan <-chan dto.Message) {
+func (s *webSocket) HandleWebSocket(ctx context.Context, w http.ResponseWriter, r *http.Request, sendChan <-chan dto.Message) {
 	var err error
 	s.connection, err = s.upGrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -63,12 +66,22 @@ func (s *webSocket) HandleWebSocket(w http.ResponseWriter, r *http.Request, send
 	}()
 
 	for {
+		OwnerId := r.URL.Query().Get("user")
+		if OwnerId == "" {
+			return
+		}
+
 		messageType, message, err := s.connection.ReadMessage()
 		if err != nil && websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
 			hlog.Info("webSocketServer.HandleWebSocket.Connection", "Closing Connection")
 			break
 		}
-		if err = s.broker.Publish("whatsapp.send", message); err != nil {
+		var msg valueobject.Message
+		if err = json.Unmarshal(message, &msg); err != nil {
+			hlog.Error("webSocketServer.HandleWebSocket.Unmarshal", fmt.Sprintf("err: %v", err))
+		}
+
+		if err = s.whatsAppMediator.SendMessage(ctx, OwnerId, &msg); err != nil {
 			hlog.Error("webSocketServer.HandleWebSocket.Publish", fmt.Sprintf("websocket error : %v", err))
 		} else {
 			if err = s.connection.WriteMessage(messageType, message); err != nil {
