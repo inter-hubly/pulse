@@ -17,6 +17,13 @@
             padding: 8px;
             border-bottom: 1px solid #ddd;
         }
+        .owner-message {
+            color: white; /* Cor do texto */
+            background-color: blue; /* Fundo da mensagem */
+            padding: 5px; /* Espaçamento interno */
+            border-radius: 4px; /* Borda arredondada */
+        }
+
     </style>
 </head>
 <body>
@@ -26,6 +33,10 @@
     <input id="message" type="text" placeholder="Message" required>
     <button type="submit">Send</button>
 </form>
+<form id="start-template">
+    <button type="submit">Start Template</button>
+</form>
+
 <script>
     const userId = "515719138282305"
     const numberId = "15551817023"
@@ -62,6 +73,11 @@
     ws.onmessage = function (event) {
         const msg = JSON.parse(event.data);
         const item = document.createElement("li");
+        console.log(msg)
+        if (msg.isOwner) {
+            item.classList.add("owner-message"); // Adiciona a classe específica
+        
+        }
         item.textContent = msg.username + ": " + msg.message;
         document.getElementById("messages").appendChild(item);
     };
@@ -73,11 +89,26 @@
         ws.send(JSON.stringify({
             "toId": "+5548991784586",
             "ownerId": username,
-            "message": message
+            "message": message,
+            "isOwner":true,
         }));
 
         document.getElementById("message").value = '';
     };
+
+    document.getElementById("start-template").onsubmit = function (event) {
+        fetch(`http://localhost:8082/template?user=${userId}&toId=+5548991784586`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        });
+
+        event.preventDefault();
+
+        document.getElementById("message").value = 'DEU PORRA';
+    };
+
 
     window.onload = function () {
         fetchMessages();

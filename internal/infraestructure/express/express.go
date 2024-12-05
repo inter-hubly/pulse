@@ -6,11 +6,11 @@ import (
 	"github.com/inter-hubly/pilot/server"
 )
 
-var exchange = "linker"
+var exchangeBroker = "linker"
 
 func Start() {
 
-	rabbitmq.NewRabbitMQ(exchange, "topic")
+	rabbitmq.NewRabbitMQ(exchangeBroker, "topic")
 
 	elasticsearch.NewConn(
 		elasticsearch.WithUrl([]string{server.GetElasticSearch().Host}),
@@ -19,6 +19,13 @@ func Start() {
 			server.GetElasticSearch().Password,
 		),
 	)
+
+	if err := rabbitmq.GetConnection().
+		QueueBind(
+			rabbitmq.NewQueueBinding("whatsapp.send", "whatsapp.send", exchangeBroker),
+		); err != nil {
+		panic(err)
+	}
 
 	NewPulseControllers()
 }

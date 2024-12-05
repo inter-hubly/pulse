@@ -66,6 +66,7 @@ func (c *chatGroup) GetAllMessages(w http.ResponseWriter, r *http.Request) {
 		resp = append(resp, dto.Message{
 			Username: OwnerId,
 			Message:  v.Message,
+			IsOwner:  v.IsOwner,
 		})
 	}
 	marshal, err := json.Marshal(resp)

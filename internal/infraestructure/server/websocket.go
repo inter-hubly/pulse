@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"sync"
@@ -56,8 +57,17 @@ func (s *webSocket) HandleWebSocket(ctx context.Context, w http.ResponseWriter, 
 	}
 	defer s.connection.Close()
 
+	OwnerId, err := getUserId(r)
+	if err != nil {
+		hlog.Error("webSocketServer.HandleWebSocket.getUserId", fmt.Sprintf("err: %v", err))
+	}
+
 	go func() {
 		for msg := range sendChan {
+			err = s.whatsAppMediator.ReceiveMessage(ctx, OwnerId, msg)
+			if err != nil {
+				hlog.Error("webSocketServer.HandleWebSocket.receiveMessage", fmt.Sprintf("error receiving message: %v", err))
+			}
 			if err = s.connection.WriteJSON(msg); err != nil {
 				hlog.Error("webSocketServer.HandleWebSocket.WriteJSON", fmt.Sprintf("websocket error sending message: %v", err))
 				break
@@ -66,11 +76,6 @@ func (s *webSocket) HandleWebSocket(ctx context.Context, w http.ResponseWriter, 
 	}()
 
 	for {
-		OwnerId := r.URL.Query().Get("user")
-		if OwnerId == "" {
-			return
-		}
-
 		messageType, message, err := s.connection.ReadMessage()
 		if err != nil && websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
 			hlog.Info("webSocketServer.HandleWebSocket.Connection", "Closing Connection")
@@ -89,4 +94,12 @@ func (s *webSocket) HandleWebSocket(ctx context.Context, w http.ResponseWriter, 
 			}
 		}
 	}
+}
+
+func getUserId(r *http.Request) (string, error) {
+	OwnerId := r.URL.Query().Get("user")
+	if OwnerId == "" {
+		return "", errors.New("no user id")
+	}
+	return OwnerId, nil
 }
