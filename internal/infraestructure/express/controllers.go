@@ -30,4 +30,5 @@ func (c *controllers) startControllers() {
 	http.HandleFunc("/ws", c.chatGroupController.Handle)
 	http.HandleFunc("/receive", c.chatGroupController.ReceiveMessage)
 	http.HandleFunc("/messages", c.chatGroupController.GetAllMessages)
+	http.HandleFunc("/template", c.chatGroupController.StartTemplate)
 }

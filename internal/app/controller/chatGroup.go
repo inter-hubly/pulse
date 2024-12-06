@@ -17,6 +17,7 @@ type ChatGroup interface {
 	GetAllMessages(w http.ResponseWriter, r *http.Request)
 	ReceiveMessage(w http.ResponseWriter, r *http.Request)
 	HandleStaticFiles(w http.ResponseWriter, r *http.Request)
+	StartTemplate(w http.ResponseWriter, r *http.Request)
 }
 
 var (
@@ -52,19 +53,19 @@ func (c *chatGroup) HandleStaticFiles(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *chatGroup) GetAllMessages(w http.ResponseWriter, r *http.Request) {
-	OwnerId := r.URL.Query().Get("user")
-	if OwnerId == "" {
+	ownerId := r.URL.Query().Get("user")
+	if ownerId == "" {
 		return
 	}
 
-	message, err := c.whatsAppService.GetAllMessage(context.Background(), OwnerId, "+5548991784586")
+	message, err := c.whatsAppService.GetAllMessage(context.Background(), ownerId, "+5548991784586")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 	resp := make([]dto.Message, 0)
 	for _, v := range message {
 		resp = append(resp, dto.Message{
-			Username: OwnerId,
+			Username: v.ProfileName,
 			Message:  v.Message,
 			IsOwner:  v.IsOwner,
 		})
@@ -91,4 +92,29 @@ func (c *chatGroup) ReceiveMessage(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	return
+}
+
+func (c *chatGroup) StartTemplate(w http.ResponseWriter, r *http.Request) {
+	ownerId := r.URL.Query().Get("user")
+	if ownerId == "" {
+		return
+	}
+	template := dto.Template{
+		OwnerId:  ownerId,
+		ToId:     "+5548991784586",
+		Name:     "hello_world",
+		Language: "en_US",
+	}
+	err := c.whatsAppService.StartTemplate(context.Background(), ownerId, &template)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+	go func() {
+		chatGroupController.channel <- dto.Message{
+			Username: template.OwnerId,
+			ToId:     template.ToId,
+			Message:  template.Name,
+			IsOwner:  true,
+		}
+	}()
 }

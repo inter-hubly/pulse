@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"sync"
-	"time"
 
 	"github.com/inter-hubly/pilot/broker"
 	"github.com/inter-hubly/pilot/hlog"
@@ -20,6 +20,7 @@ type WhatsApp interface {
 	GetConversation(ctx context.Context, ownerId, ToId string) (entity.Conversation, error)
 	SendMessage(ctx context.Context, ownerId string, msg *valueobject.Message) error
 	ReceiveMessage(ctx context.Context, ownerId string, msg dto.Message) error
+	StartTemplate(ctx context.Context, ownerId string, msg *dto.Template) error
 }
 
 var (
@@ -66,8 +67,8 @@ func (m *whatsAppMediator) SendMessage(ctx context.Context, ownerId string, msg 
 	sendMessage := senderMessage{
 		Message: msg.Message,
 		SenderAndReceiver: senderAndReceiverDto{
-			OwnerNumberId: ownerId,
-			To:            msg.ToId,
+			OwnerId: ownerId,
+			To:      msg.ToId,
 		},
 	}
 
@@ -94,9 +95,47 @@ func (m *whatsAppMediator) ReceiveMessage(ctx context.Context, ownerId string, m
 	if err != nil {
 		return err
 	}
-	message := valueobject.NewMessage(msg.ToId, msg.Message, time.Now().Unix(), false)
+	message := valueobject.NewMessage(
+		valueobject.WithToId(msg.ToId),
+		valueobject.WithMessage(msg.Message),
+		valueobject.WithIsOwner(false),
+	)
 	conversation.PushMessage(ctx, message)
 
+	return nil
+}
+func (m *whatsAppMediator) StartTemplate(ctx context.Context, ownerId string, template *dto.Template) error {
+
+	type senderDtoStruct struct {
+		SenderAndReceiver struct {
+			OwnerId string `json:"ownerId"`
+			To      string `json:"to"`
+		} `json:"senderAndReceiver"`
+		Name     string `json:"name"`
+		Language string `json:"language"`
+	}
+	senderDto := senderDtoStruct{}
+	senderDto.SenderAndReceiver.OwnerId = ownerId
+	senderDto.SenderAndReceiver.To = "+5548991784586"
+	senderDto.Name = template.Name
+	senderDto.Language = template.Language
+	marshal, err := json.Marshal(&senderDto)
+	if err != nil {
+		log.Printf("Error marshalling template: %v", err)
+	}
+	if err = m.broker.Publish("whatsapp.start", marshal); err != nil {
+		hlog.Error("whatsAppService.SendMessage", fmt.Sprintf("error sending template :%s", err))
+	}
+	conversation, err := m.GetConversation(ctx, ownerId, template.ToId)
+	if err != nil {
+		return err
+	}
+	message := valueobject.NewMessage(
+		valueobject.WithToId(template.ToId),
+		valueobject.WithProfileName(template.Name),
+		valueobject.WithIsOwner(true),
+	)
+	conversation.PushMessage(ctx, message)
 	return nil
 }
 
@@ -105,6 +144,6 @@ type senderMessage struct {
 	Message           string               `json:"message"`
 }
 type senderAndReceiverDto struct {
-	OwnerNumberId string `json:"OwnerNumberId"`
-	To            string `json:"to"`
+	OwnerId string `json:"OwnerId"`
+	To      string `json:"to"`
 }

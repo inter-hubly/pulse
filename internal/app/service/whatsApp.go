@@ -16,7 +16,8 @@ import (
 
 type WhatsApp interface {
 	GetAllMessage(ctx context.Context, ownerId, toId string) ([]*valueobject.Message, error)
-	SendMessage(ctx context.Context, message dto.Message) error
+	SendMessage(ctx context.Context, message *dto.Message) error
+	StartTemplate(ctx context.Context, ownerId string, message *dto.Template) error
 }
 
 var (
@@ -33,6 +34,7 @@ func NewWhatsApp() *whatsAppService {
 	whatsAppOnce.Do(func() {
 		whatsApp = &whatsAppService{
 			whatsAppMediator: mediator.NewWhatsApp(),
+			whatsAppBroker:   broker.GetConnection(),
 		}
 	})
 	return whatsApp
@@ -46,7 +48,7 @@ func (s *whatsAppService) GetAllMessage(ctx context.Context, ownerId, toId strin
 	return conversation.GetConversation(ctx).GetMessages(ctx), nil
 }
 
-func (s *whatsAppService) SendMessage(ctx context.Context, message dto.Message) error {
+func (s *whatsAppService) SendMessage(ctx context.Context, message *dto.Message) error {
 	type senderDtoStruct struct {
 		SenderAndReceiver struct {
 			OwnerNumberId string `json:"OwnerNumberId"`
@@ -67,5 +69,14 @@ func (s *whatsAppService) SendMessage(ctx context.Context, message dto.Message) 
 	if err = s.whatsAppBroker.Publish("whatsapp.send", marshal); err != nil {
 		hlog.Error("whatsAppService.SendMessage", fmt.Sprintf("error sending message :%s", err))
 	}
+	return nil
+}
+
+func (s *whatsAppService) StartTemplate(ctx context.Context, ownerId string, template *dto.Template) error {
+
+	if err := s.whatsAppMediator.StartTemplate(ctx, ownerId, template); err != nil {
+		return err
+	}
+
 	return nil
 }

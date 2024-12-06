@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"sync"
-	"time"
 
 	"github.com/inter-hubly/pilot/database/elasticsearch"
 	"github.com/inter-hubly/pulse/internal/domain/valueobject"
@@ -59,17 +58,35 @@ func (w *whatsAppRepository) GetAllMessage(ctx context.Context, id, toId string)
 		response := v.(map[string]interface{})["_source"].(map[string]interface{})
 		var dto *valueobject.Message
 		var sender string
-		var isOwner bool
-		if s, ok := response["sender"].(string); ok {
-			sender = s
+		var isOwner, ok bool
+
+		if isOwner, ok = response["isOwner"].(bool); ok {
+			var key string
+			if isOwner {
+				key = "ownerId"
+			} else {
+				key = "profileName"
+			}
+
+			if s, ok := response[key].(string); ok {
+				sender = s
+			} else {
+				sender = response["toPhone"].(string)
+			}
 		}
-		if s, ok := response["isOwner"].(bool); ok {
-			isOwner = s
-		}
+
 		if response["type"] == "template" {
-			dto = valueobject.NewMessage(sender, response["templateName"].(string), time.Now().Unix(), isOwner)
+			dto = valueobject.NewMessage(
+				valueobject.WithProfileName(sender),
+				valueobject.WithMessage(response["templateName"].(string)),
+				valueobject.WithIsOwner(isOwner),
+			)
 		} else {
-			dto = valueobject.NewMessage(sender, response["message"].(string), time.Now().Unix(), isOwner)
+			dto = valueobject.NewMessage(
+				valueobject.WithProfileName(sender),
+				valueobject.WithMessage(response["message"].(string)),
+				valueobject.WithIsOwner(isOwner),
+			)
 		}
 		sms = append(sms, dto)
 	}

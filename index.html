@@ -61,6 +61,9 @@
                 const messagesList = document.getElementById("messages");
                 messages.forEach(msg => {
                     const item = document.createElement("li");
+                    if (msg.isOwner) {
+                        item.classList.add("owner-message");
+                    }
                     item.textContent = msg.username + ": " + msg.message;
                     messagesList.appendChild(item);
                 });
@@ -73,10 +76,8 @@
     ws.onmessage = function (event) {
         const msg = JSON.parse(event.data);
         const item = document.createElement("li");
-        console.log(msg)
         if (msg.isOwner) {
-            item.classList.add("owner-message"); // Adiciona a classe específica
-        
+            item.classList.add("owner-message");
         }
         item.textContent = msg.username + ": " + msg.message;
         document.getElementById("messages").appendChild(item);
@@ -106,7 +107,7 @@
 
         event.preventDefault();
 
-        document.getElementById("message").value = 'DEU PORRA';
+        document.getElementById("message").value = '';
     };
 
 
