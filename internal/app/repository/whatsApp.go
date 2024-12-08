@@ -41,6 +41,11 @@ func (w *whatsAppRepository) GetAllMessage(ctx context.Context, id, toId string)
 							"ownerId": id,
 						},
 					},
+					{
+						"match": map[string]interface{}{
+							"toPhone": toId,
+						},
+					},
 				},
 			},
 		},

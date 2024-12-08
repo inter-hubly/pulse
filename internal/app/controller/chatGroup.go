@@ -1,12 +1,12 @@
 package controller
 
 import (
-	"context"
 	"encoding/json"
 	"io"
 	"net/http"
 	"sync"
 
+	"github.com/inter-hubly/pilot/hctx"
 	"github.com/inter-hubly/pulse/internal/app/service"
 	"github.com/inter-hubly/pulse/internal/domain/dto"
 	"github.com/inter-hubly/pulse/internal/infraestructure/server"
@@ -26,25 +26,27 @@ var (
 )
 
 type chatGroup struct {
-	channel         chan dto.Message
-	websocket       server.WebSocket
 	whatsAppService service.WhatsApp
+	webSocket       server.WebSocket
 }
 
 func NewChatGroup() *chatGroup {
 	chatGroupOnce.Do(func() {
 		chatGroupController = &chatGroup{
-			channel:         make(chan dto.Message),
-			websocket:       server.NewWebSocket(),
 			whatsAppService: service.NewWhatsApp(),
+			webSocket:       server.NewWebSocket(),
 		}
 	})
 	return chatGroupController
 }
 
 func (c *chatGroup) Handle(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
-	c.websocket.HandleWebSocket(ctx, w, r, c.channel)
+	ownerId := r.URL.Query().Get("user")
+	if ownerId == "" {
+		return
+	}
+	ctx := hctx.Tenant.New(ownerId)
+	c.webSocket.HandleWebSocket(ctx, w, r)
 }
 
 func (c *chatGroup) HandleStaticFiles(w http.ResponseWriter, r *http.Request) {
@@ -53,27 +55,33 @@ func (c *chatGroup) HandleStaticFiles(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *chatGroup) GetAllMessages(w http.ResponseWriter, r *http.Request) {
-	ownerId := r.URL.Query().Get("user")
-	if ownerId == "" {
-		return
-	}
-
-	message, err := c.whatsAppService.GetAllMessage(context.Background(), ownerId, "+5548991784586")
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-	}
-	resp := make([]dto.Message, 0)
-	for _, v := range message {
-		resp = append(resp, dto.Message{
-			Username: v.ProfileName,
-			Message:  v.Message,
-			IsOwner:  v.IsOwner,
-		})
-	}
-	marshal, err := json.Marshal(resp)
-	w.WriteHeader(http.StatusOK)
-	w.Write(marshal)
-	w.Header().Add("Content-Type", "application/json")
+	// ownerId := r.URL.Query().Get("user")
+	// if ownerId == "" {
+	// 	return
+	// }
+	//
+	// toNumber := r.Header.Get("to-number")
+	// if toNumber == "" {
+	// 	return
+	// }
+	// ctx := hctx.Tenant.New(ownerId)
+	//
+	// message, err := c.whatsAppService.GetAllMessage(ctx, ownerId, toNumber)
+	// if err != nil {
+	// 	w.WriteHeader(http.StatusInternalServerError)
+	// }
+	// resp := make([]dto.Message, 0)
+	// for _, v := range message {
+	// 	resp = append(resp, dto.Message{
+	// 		Username: v.ProfileName,
+	// 		Message:  v.Message,
+	// 		IsOwner:  v.IsOwner,
+	// 	})
+	// }
+	// marshal, err := json.Marshal(resp)
+	// w.WriteHeader(http.StatusOK)
+	// w.Write(marshal)
+	// w.Header().Add("Content-Type", "application/json")
 }
 
 func (c *chatGroup) ReceiveMessage(w http.ResponseWriter, r *http.Request) {
@@ -88,7 +96,7 @@ func (c *chatGroup) ReceiveMessage(w http.ResponseWriter, r *http.Request) {
 		if err = json.Unmarshal(body, &message); err != nil {
 			return
 		}
-		chatGroupController.channel <- message
+		// chatGroupController.channel <- message
 	}()
 
 	return
@@ -99,22 +107,22 @@ func (c *chatGroup) StartTemplate(w http.ResponseWriter, r *http.Request) {
 	if ownerId == "" {
 		return
 	}
+
+	ctx := hctx.Tenant.New(ownerId)
+
+	toNumber := r.Header.Get("to-number")
+	if toNumber == "" {
+		return
+	}
 	template := dto.Template{
 		OwnerId:  ownerId,
-		ToId:     "+5548991784586",
+		ToNumber: toNumber,
 		Name:     "hello_world",
 		Language: "en_US",
 	}
-	err := c.whatsAppService.StartTemplate(context.Background(), ownerId, &template)
-	if err != nil {
+
+	if c.whatsAppService.StartTemplate(ctx, ownerId, &template) != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
-	go func() {
-		chatGroupController.channel <- dto.Message{
-			Username: template.OwnerId,
-			ToId:     template.ToId,
-			Message:  template.Name,
-			IsOwner:  true,
-		}
-	}()
+
 }

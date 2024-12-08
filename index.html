@@ -3,116 +3,210 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat App</title>
+    <title>Chat App - Dois Chats</title>
     <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .chat-container {
+            display: flex;
+            width: 80%;
+            height: 80%;
+        }
+
+        .chat-box {
+            flex: 1;
+            margin: 10px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            background-color: #f9f9f9;
+        }
+
         #messages {
             list-style-type: none;
             margin: 0;
             padding: 0;
-            height: 200px;
+            flex: 1;
             overflow-y: scroll;
+            border: 1px solid #ddd;
+            padding: 5px;
         }
 
         #messages li {
             padding: 8px;
             border-bottom: 1px solid #ddd;
         }
+
         .owner-message {
-            color: white; /* Cor do texto */
-            background-color: blue; /* Fundo da mensagem */
-            padding: 5px; /* Espaçamento interno */
-            border-radius: 4px; /* Borda arredondada */
+            color: white;
+            background-color: blue;
+            padding: 5px;
+            border-radius: 4px;
         }
 
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            flex: 1;
+        }
+
+        button {
+            padding: 8px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .disconnect-btn {
+            background-color: #f44336;
+        }
+
+        .disconnect-btn:hover {
+            background-color: #d32f2f;
+        }
     </style>
 </head>
 <body>
-<ul id="messages"></ul>
-<form id="form">
-    <input id="username" type="text" placeholder="Username" required disabled>
-    <input id="message" type="text" placeholder="Message" required>
-    <button type="submit">Send</button>
-</form>
-<form id="start-template">
-    <button type="submit">Start Template</button>
-</form>
+
+<div class="chat-container">
+    <!-- Chat 1 -->
+    <div class="chat-box">
+        <h2>Ribeiro</h2>
+        <ul id="messages1"></ul>
+        <form id="form1">
+            <input id="message1" type="text" placeholder="Message" required>
+            <div>
+                <button type="button" id="connect1">Connect</button>
+                <button type="button" id="disconnect1" class="disconnect-btn">Disconnect</button>
+            </div>
+            <button type="submit">Send</button>
+        </form>
+    </div>
+
+    <!-- Chat 2 -->
+    <div class="chat-box">
+        <h2>Saimon</h2>
+        <ul id="messages2"></ul>
+        <form id="form2">
+            <input id="message2" type="text" placeholder="Message" required>
+            <div>
+                <button type="button" id="connect2">Connect</button>
+                <button type="button" id="disconnect2" class="disconnect-btn">Disconnect</button>
+            </div>
+            <button type="submit">Send</button>
+        </form>
+    </div>
+</div>
 
 <script>
-    const userId = "515719138282305"
-    const numberId = "15551817023"
-    document.getElementById("username").value = numberId;
+    let ws1 = null;
+    let ws2 = null;
 
-    function fetchMessages() {
-        fetch(`http://localhost:8082/messages?user=${userId}`, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-                "userId": userId,
-                "number": numberId
+    function createWebSocket(chatId, toNumber) {
+        const ws = new WebSocket(`ws://localhost:8082/ws?user=515719138282305&toNumber=${toNumber}`);
+
+        ws.onopen = () => {
+            console.log(`WebSocket conectado para ${chatId}`);
+        };
+
+        ws.onmessage = (event) => {
+            const msg = JSON.parse(event.data);
+            const messageElement = document.createElement("li");
+            messageElement.textContent = `${msg.senderId}: ${msg.message}`;
+            if (msg.isOwner) {
+                messageElement.classList.add("owner-message");
             }
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Erro na resposta: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(messages => {
-                const messagesList = document.getElementById("messages");
-                messages.forEach(msg => {
-                    const item = document.createElement("li");
-                    if (msg.isOwner) {
-                        item.classList.add("owner-message");
-                    }
-                    item.textContent = msg.username + ": " + msg.message;
-                    messagesList.appendChild(item);
-                });
-            })
-            .catch(error => console.error("Erro ao buscar mensagens:", error));
+            document.getElementById(chatId).appendChild(messageElement);
+        };
+
+        ws.onerror = (error) => {
+            console.error(`Erro no WebSocket para ${chatId}:`, error);
+        };
+
+        ws.onclose = () => {
+            console.log(`WebSocket desconectado para ${chatId}`);
+        };
+
+        return ws;
     }
 
-    const ws = new WebSocket(`ws://localhost:8082/ws?user=${userId}`);
-
-    ws.onmessage = function (event) {
-        const msg = JSON.parse(event.data);
-        const item = document.createElement("li");
-        if (msg.isOwner) {
-            item.classList.add("owner-message");
+    // Chat 1
+    document.getElementById("connect1").onclick = () => {
+        if (!ws1 || ws1.readyState !== WebSocket.OPEN) {
+            ws1 = createWebSocket("messages1", "%2B5548988356622");
         }
-        item.textContent = msg.username + ": " + msg.message;
-        document.getElementById("messages").appendChild(item);
     };
 
-    document.getElementById("form").onsubmit = function (event) {
+    document.getElementById("disconnect1").onclick = () => {
+        if (ws1 && ws1.readyState === WebSocket.OPEN) {
+            ws1.close();
+            ws1 = null;
+        }
+    };
+
+    document.getElementById("form1").onsubmit = (event) => {
         event.preventDefault();
-        const username = document.getElementById("username").value;
-        const message = document.getElementById("message").value;
-        ws.send(JSON.stringify({
-            "toId": "+5548991784586",
-            "ownerId": username,
-            "message": message,
-            "isOwner":true,
-        }));
-
-        document.getElementById("message").value = '';
+        if (ws1 && ws1.readyState === WebSocket.OPEN) {
+            const message = document.getElementById("message1").value;
+            ws1.send(JSON.stringify({
+                "toNumber": "+5548988356622",
+                "ownerId": "Chat1",
+                "message": message,
+                "isOwner": true,
+            }));
+            document.getElementById("message1").value = '';
+        } else {
+            alert("Conecte-se primeiro ao WebSocket para enviar mensagens.");
+        }
     };
 
-    document.getElementById("start-template").onsubmit = function (event) {
-        fetch(`http://localhost:8082/template?user=${userId}&toId=+5548991784586`, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json"
-            }
-        });
+    // Chat 2
+    document.getElementById("connect2").onclick = () => {
+        if (!ws2 || ws2.readyState !== WebSocket.OPEN) {
+            ws2 = createWebSocket("messages2", "%2B5548991784586");
+        }
+    };
 
+    document.getElementById("disconnect2").onclick = () => {
+        if (ws2 && ws2.readyState === WebSocket.OPEN) {
+            ws2.close();
+            ws2 = null;
+        }
+    };
+
+    document.getElementById("form2").onsubmit = (event) => {
         event.preventDefault();
-
-        document.getElementById("message").value = '';
-    };
-
-
-    window.onload = function () {
-        fetchMessages();
+        if (ws2 && ws2.readyState === WebSocket.OPEN) {
+            const message = document.getElementById("message2").value;
+            ws2.send(JSON.stringify({
+                "toNumber": "+5548991784586",
+                "ownerId": "Chat2",
+                "message": message,
+                "isOwner": true,
+            }));
+            document.getElementById("message2").value = '';
+        } else {
+            alert("Conecte-se primeiro ao WebSocket para enviar mensagens.");
+        }
     };
 </script>
 

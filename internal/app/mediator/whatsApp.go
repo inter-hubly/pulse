@@ -68,7 +68,7 @@ func (m *whatsAppMediator) SendMessage(ctx context.Context, ownerId string, msg 
 		Message: msg.Message,
 		SenderAndReceiver: senderAndReceiverDto{
 			OwnerId: ownerId,
-			To:      msg.ToId,
+			To:      msg.ToNumber,
 		},
 	}
 
@@ -81,7 +81,7 @@ func (m *whatsAppMediator) SendMessage(ctx context.Context, ownerId string, msg 
 		hlog.Debug("whatsAppMediator.SendMessage", fmt.Sprintf("Publish message fail %s", err))
 		return err
 	}
-	conversation, err := m.GetConversation(ctx, ownerId, msg.ToId)
+	conversation, err := m.GetConversation(ctx, ownerId, msg.ToNumber)
 	if err != nil {
 		return err
 	}
@@ -91,12 +91,12 @@ func (m *whatsAppMediator) SendMessage(ctx context.Context, ownerId string, msg 
 }
 
 func (m *whatsAppMediator) ReceiveMessage(ctx context.Context, ownerId string, msg dto.Message) error {
-	conversation, err := m.GetConversation(ctx, ownerId, msg.ToId)
+	conversation, err := m.GetConversation(ctx, ownerId, msg.ToNumber)
 	if err != nil {
 		return err
 	}
 	message := valueobject.NewMessage(
-		valueobject.WithToId(msg.ToId),
+		valueobject.WithToNumber(msg.ToNumber),
 		valueobject.WithMessage(msg.Message),
 		valueobject.WithIsOwner(false),
 	)
@@ -114,24 +114,27 @@ func (m *whatsAppMediator) StartTemplate(ctx context.Context, ownerId string, te
 		Name     string `json:"name"`
 		Language string `json:"language"`
 	}
+
 	senderDto := senderDtoStruct{}
 	senderDto.SenderAndReceiver.OwnerId = ownerId
-	senderDto.SenderAndReceiver.To = "+5548991784586"
+	senderDto.SenderAndReceiver.To = template.ToNumber
 	senderDto.Name = template.Name
 	senderDto.Language = template.Language
+
 	marshal, err := json.Marshal(&senderDto)
 	if err != nil {
 		log.Printf("Error marshalling template: %v", err)
 	}
+
 	if err = m.broker.Publish("whatsapp.start", marshal); err != nil {
 		hlog.Error("whatsAppService.SendMessage", fmt.Sprintf("error sending template :%s", err))
 	}
-	conversation, err := m.GetConversation(ctx, ownerId, template.ToId)
+	conversation, err := m.GetConversation(ctx, ownerId, template.ToNumber)
 	if err != nil {
 		return err
 	}
 	message := valueobject.NewMessage(
-		valueobject.WithToId(template.ToId),
+		valueobject.WithToNumber(template.ToNumber),
 		valueobject.WithProfileName(template.Name),
 		valueobject.WithIsOwner(true),
 	)

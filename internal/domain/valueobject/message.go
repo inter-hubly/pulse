@@ -4,17 +4,15 @@ import "time"
 
 // Message struct representando uma mensagem
 type Message struct {
-	ToId        string `json:"toId,omitempty"`
+	ToNumber    string `json:"toNumber,omitempty"`
 	ProfileName string `json:"profileName,omitempty"`
 	Message     string `json:"message"`
 	Time        int64  `json:"time"`
 	IsOwner     bool   `json:"isOwner"`
 }
 
-// Option é o tipo de função que configura o objeto Message
 type Option func(*Message)
 
-// NewMessage cria um novo objeto Message com as opções fornecidas
 func NewMessage(options ...Option) *Message {
 	msg := &Message{
 		Time: time.Now().Unix(), // Valor padrão
@@ -25,28 +23,24 @@ func NewMessage(options ...Option) *Message {
 	return msg
 }
 
-// WithToId configura o campo ToId
-func WithToId(toId string) Option {
+func WithToNumber(toNumber string) Option {
 	return func(m *Message) {
-		m.ToId = toId
+		m.ToNumber = toNumber
 	}
 }
 
-// WithProfileName configura o campo ProfileName
 func WithProfileName(profileName string) Option {
 	return func(m *Message) {
 		m.ProfileName = profileName
 	}
 }
 
-// WithMessage configura o campo Message
 func WithMessage(message string) Option {
 	return func(m *Message) {
 		m.Message = message
 	}
 }
 
-// WithIsOwner configura o campo IsOwner
 func WithIsOwner(isOwner bool) Option {
 	return func(m *Message) {
 		m.IsOwner = isOwner
