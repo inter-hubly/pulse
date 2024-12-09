@@ -98,7 +98,7 @@
 <div class="chat-container">
     <!-- Chat 1 -->
     <div class="chat-box">
-        <h2>Ribeiro</h2>
+        <h2>Fabiane</h2>
         <ul id="messages1"></ul>
         <form id="form1">
             <input id="message1" type="text" placeholder="Message" required>
@@ -164,7 +164,7 @@
     // Chat 1
     document.getElementById("connect1").onclick = () => {
         if (!ws1 || ws1.readyState !== WebSocket.OPEN) {
-            ws1 = createWebSocket("messages1", "%2B5548988356622");
+            ws1 = createWebSocket("messages1", "%2B5548996711701");
         }
     };
 
@@ -180,7 +180,7 @@
         if (ws1 && ws1.readyState === WebSocket.OPEN) {
             const message = document.getElementById("message1").value;
             ws1.send(JSON.stringify({
-                "toNumber": "+5548988356622",
+                "toNumber": "+5548996711701",
                 "ownerId": "Chat1",
                 "message": message,
                 "isOwner": true,
@@ -222,7 +222,7 @@
     };
 
     function iniciarTemplate(id) {
-        const number = id === 1 ? "+5548988356622" : "+5548991784586";
+        const number = id === 1 ? "+5548996711701" : "+5548991784586";
 
         document.getElementById("startTemplateButton" + id).onclick = () => {
             console.log(`Iniciando template para ${number}...`);

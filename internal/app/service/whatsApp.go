@@ -18,6 +18,7 @@ import (
 type WhatsApp interface {
 	GetAllMessage(ctx context.Context, ownerId, toId string) ([]*valueobject.Message, error)
 	SendMessage(ctx context.Context, message *dto.Message) error
+	ReceiveMessage(ctx context.Context, message *dto.Message) error
 	StartTemplate(ctx context.Context, ownerId string, message *dto.Template) error
 }
 
@@ -77,9 +78,9 @@ func (s *whatsAppService) SendMessage(ctx context.Context, message *dto.Message)
 
 func (s *whatsAppService) StartTemplate(ctx context.Context, ownerId string, template *dto.Template) error {
 
-	// if err := s.whatsAppMediator.StartTemplate(ctx, ownerId, template); err != nil {
-	// 	return err
-	// }
+	if err := s.whatsAppMediator.StartTemplate(ctx, ownerId, template); err != nil {
+		return err
+	}
 
 	connection, err := s.webSocketServer.GetConnection(ctx)
 	if err != nil {
@@ -88,6 +89,19 @@ func (s *whatsAppService) StartTemplate(ctx context.Context, ownerId string, tem
 	connection.WriteMessage(ctx, valueobject.Message{
 		ToNumber: template.ToNumber,
 		Message:  template.Name,
+		IsOwner:  true,
+	})
+	return nil
+}
+
+func (s *whatsAppService) ReceiveMessage(ctx context.Context, message *dto.Message) error {
+	connection, err := s.webSocketServer.GetConnection(ctx)
+	if err != nil {
+		return err
+	}
+	connection.WriteMessage(ctx, valueobject.Message{
+		ToNumber: message.ToNumber,
+		Message:  message.Message,
 		IsOwner:  true,
 	})
 	return nil

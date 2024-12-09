@@ -85,6 +85,13 @@ func (c *chatGroup) GetAllMessages(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *chatGroup) ReceiveMessage(w http.ResponseWriter, r *http.Request) {
+	ownerId := r.URL.Query().Get("user")
+	if ownerId == "" {
+		return
+	}
+
+	ctx := hctx.Tenant.New(ownerId)
+
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		return
@@ -96,7 +103,7 @@ func (c *chatGroup) ReceiveMessage(w http.ResponseWriter, r *http.Request) {
 		if err = json.Unmarshal(body, &message); err != nil {
 			return
 		}
-		// chatGroupController.channel <- message
+		c.whatsAppService.ReceiveMessage(ctx, &message)
 	}()
 
 	return
