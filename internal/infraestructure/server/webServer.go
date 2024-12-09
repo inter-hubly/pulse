@@ -16,42 +16,40 @@ var (
 func NewServerConversation() *conversationGroups {
 	serverConversationOnce.Do(func() {
 		serverGroup = &conversationGroups{
-			conversations: make(map[string]map[string]WebSocketConversation),
+			conversations: make(map[string]WebSocketConversation),
 		}
 	})
 	return serverGroup
 }
 
 type WebSocketServer interface {
-	GetConnection(ctx context.Context, numberId string) (WebSocketConversation, error)
-	SaveConnection(ctx context.Context, numberId string, connection WebSocketConversation) error
+	GetConnection(ctx context.Context) (WebSocketConversation, error)
+	SaveConnection(ctx context.Context, connection WebSocketConversation) error
+	DeleteConnection(ctx context.Context)
 }
 
 type conversationGroups struct {
-	conversations map[string]map[string]WebSocketConversation
+	conversations map[string]WebSocketConversation
 }
 
-func (s *conversationGroups) GetConnection(ctx context.Context, numberId string) (WebSocketConversation, error) {
+func (s *conversationGroups) GetConnection(ctx context.Context) (WebSocketConversation, error) {
 	tenantId := hctx.Tenant.Get(ctx)
 	// se existe a conexão aberta
 	if conv, ok := s.conversations[tenantId]; ok {
-
-		// se a conexão com o número já está aberta
-		if singleConv, convOk := conv[numberId]; convOk {
-			return singleConv, nil
-		}
+		return conv, nil
 	}
 	return nil, errors.New("connection not found")
 }
 
-func (s *conversationGroups) SaveConnection(ctx context.Context, numberId string, connection WebSocketConversation) error {
+func (s *conversationGroups) SaveConnection(ctx context.Context, connection WebSocketConversation) error {
 	tenantId := hctx.Tenant.Get(ctx)
-	if conv, ok := s.conversations[tenantId]; ok {
-		conv[numberId] = connection
-		return nil
-	}
-	s.conversations[tenantId] = map[string]WebSocketConversation{
-		numberId: connection,
-	}
+
+	s.conversations[tenantId] = connection
+
 	return nil
+}
+
+func (s *conversationGroups) DeleteConnection(ctx context.Context) {
+	tenantId := hctx.Tenant.Get(ctx)
+	delete(s.conversations, tenantId)
 }

@@ -55,15 +55,15 @@ func (c *chatGroup) HandleStaticFiles(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *chatGroup) GetAllMessages(w http.ResponseWriter, r *http.Request) {
-	// ownerId := r.URL.Query().Get("user")
-	// if ownerId == "" {
-	// 	return
-	// }
-	//
-	// toNumber := r.Header.Get("to-number")
-	// if toNumber == "" {
-	// 	return
-	// }
+	ownerId := r.URL.Query().Get("user")
+	if ownerId == "" {
+		return
+	}
+
+	toNumber := r.Header.Get("to-number")
+	if toNumber == "" {
+		return
+	}
 	// ctx := hctx.Tenant.New(ownerId)
 	//
 	// message, err := c.whatsAppService.GetAllMessage(ctx, ownerId, toNumber)
@@ -121,8 +121,8 @@ func (c *chatGroup) StartTemplate(w http.ResponseWriter, r *http.Request) {
 		Language: "en_US",
 	}
 
-	if c.whatsAppService.StartTemplate(ctx, ownerId, &template) != nil {
+	if err := c.whatsAppService.StartTemplate(ctx, ownerId, &template); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
-
+	w.WriteHeader(http.StatusOK)
 }

@@ -17,10 +17,11 @@ var (
 
 type WebSocket interface {
 	HandleWebSocket(ctx context.Context, w http.ResponseWriter, r *http.Request)
+	GetConnection(ctx context.Context) (WebSocketConversation, error)
 }
 
 type webSocket struct {
-	connection       map[string]map[string]WebSocketConversation
+	connection       map[string]WebSocketConversation
 	whatsAppMediator mediator.WhatsApp
 	serverConv       WebSocketServer
 }
@@ -37,22 +38,19 @@ func NewWebSocket() *webSocket {
 }
 
 func (s *webSocket) HandleWebSocket(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-
-	toNumber := r.URL.Query().Get("toNumber")
-	if toNumber == "" {
-		return
-	}
-
-	connection, err := s.getConnection(ctx, w, r, toNumber)
+	var connection WebSocketConversation
+	connection, err := s.getConnection(ctx, w, r)
 	if err != nil {
 		hlog.Error("webSocket.HandleWebSocket", fmt.Sprintf("Error: %s", err))
 	}
 
 	connection.ReadMessage(ctx)
+
+	s.serverConv.DeleteConnection(ctx)
 }
 
-func (s *webSocket) getConnection(ctx context.Context, w http.ResponseWriter, r *http.Request, numberId string) (WebSocketConversation, error) {
-	connection, err := s.serverConv.GetConnection(ctx, numberId)
+func (s *webSocket) getConnection(ctx context.Context, w http.ResponseWriter, r *http.Request) (WebSocketConversation, error) {
+	connection, err := s.serverConv.GetConnection(ctx)
 
 	// caso a conexão não exista
 	if err != nil {
@@ -61,10 +59,14 @@ func (s *webSocket) getConnection(ctx context.Context, w http.ResponseWriter, r 
 		if err != nil {
 			return nil, err
 		}
-		if err = s.serverConv.SaveConnection(ctx, numberId, newConversation); err != nil {
+		if err = s.serverConv.SaveConnection(ctx, newConversation); err != nil {
 			return nil, err
 		}
 		return newConversation, nil
 	}
 	return connection, nil
+}
+
+func (s *webSocket) GetConnection(ctx context.Context) (WebSocketConversation, error) {
+	return s.serverConv.GetConnection(ctx)
 }

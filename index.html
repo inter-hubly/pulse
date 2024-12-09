@@ -72,6 +72,14 @@
             cursor: pointer;
         }
 
+        .iniciar-template {
+            padding: 8px;
+            background-color: #4c9baf;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
         button:hover {
             background-color: #45a049;
         }
@@ -100,6 +108,7 @@
             </div>
             <button type="submit">Send</button>
         </form>
+        <button id="startTemplateButton1" class="iniciar-template">Iniciar template</button>
     </div>
 
     <!-- Chat 2 -->
@@ -114,15 +123,18 @@
             </div>
             <button type="submit">Send</button>
         </form>
+        <button id="startTemplateButton2" class="iniciar-template">Iniciar template</button>
     </div>
 </div>
 
 <script>
     let ws1 = null;
     let ws2 = null;
+    const urlParams = new URLSearchParams(window.location.search);
+    const userId = urlParams.get("userId");
 
     function createWebSocket(chatId, toNumber) {
-        const ws = new WebSocket(`ws://localhost:8082/ws?user=515719138282305&toNumber=${toNumber}`);
+        const ws = new WebSocket(`ws://localhost:8082/ws?user=${userId}&toNumber=${toNumber}`);
 
         ws.onopen = () => {
             console.log(`WebSocket conectado para ${chatId}`);
@@ -208,6 +220,37 @@
             alert("Conecte-se primeiro ao WebSocket para enviar mensagens.");
         }
     };
+
+    function iniciarTemplate(id) {
+        const number = id === 1 ? "+5548988356622" : "+5548991784586";
+
+        document.getElementById("startTemplateButton" + id).onclick = () => {
+            console.log(`Iniciando template para ${number}...`);
+
+            fetch(`http://localhost:8082/template?user=${userId}`, {
+                method: "GET",
+                headers: {
+                    "to-number": number,
+                    "Content-Type": "application/json",
+                },
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Erro: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("Resposta do servidor:", data);
+                })
+                .catch(error => {
+                    console.error("Erro ao iniciar template:", error);
+                });
+        };
+    }
+
+    iniciarTemplate(1);
+    iniciarTemplate(2);
 </script>
 
 </body>

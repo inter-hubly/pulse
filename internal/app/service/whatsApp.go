@@ -29,7 +29,7 @@ var (
 type whatsAppService struct {
 	whatsAppMediator mediator.WhatsApp
 	whatsAppBroker   broker.Connection
-	webSocketServer  server.WebSocketServer
+	webSocketServer  server.WebSocket
 }
 
 func NewWhatsApp() *whatsAppService {
@@ -37,7 +37,7 @@ func NewWhatsApp() *whatsAppService {
 		whatsApp = &whatsAppService{
 			whatsAppMediator: mediator.NewWhatsApp(),
 			whatsAppBroker:   broker.GetConnection(),
-			webSocketServer:  server.NewServerConversation(),
+			webSocketServer:  server.NewWebSocket(),
 		}
 	})
 	return whatsApp
@@ -81,7 +81,7 @@ func (s *whatsAppService) StartTemplate(ctx context.Context, ownerId string, tem
 	// 	return err
 	// }
 
-	connection, err := s.webSocketServer.GetConnection(ctx, template.ToNumber)
+	connection, err := s.webSocketServer.GetConnection(ctx)
 	if err != nil {
 		return err
 	}
