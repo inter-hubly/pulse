@@ -24,11 +24,24 @@ func NewPulseControllers() {
 	})
 	chatGroupControllers.startControllers()
 }
-
 func (c *controllers) startControllers() {
-	http.HandleFunc("/", c.chatGroupController.HandleStaticFiles)
-	http.HandleFunc("/ws", c.chatGroupController.Handle)
-	http.HandleFunc("/receive", c.chatGroupController.ReceiveMessage)
-	http.HandleFunc("/messages", c.chatGroupController.GetAllMessages)
-	http.HandleFunc("/template", c.chatGroupController.StartTemplate)
+	http.HandleFunc("/ws", withCors(c.chatGroupController.Handle))
+	http.HandleFunc("/receive", withCors(c.chatGroupController.ReceiveMessage))
+	http.HandleFunc("/messages", withCors(c.chatGroupController.GetAllMessages))
+	http.HandleFunc("/template", withCors(c.chatGroupController.StartTemplate))
+}
+
+func withCors(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "*")
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next(w, r)
+	}
 }

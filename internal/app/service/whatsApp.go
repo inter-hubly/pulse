@@ -87,9 +87,9 @@ func (s *whatsAppService) StartTemplate(ctx context.Context, ownerId string, tem
 		return err
 	}
 	connection.WriteMessage(ctx, valueobject.Message{
-		ToNumber: template.ToNumber,
-		Message:  template.Name,
-		IsOwner:  true,
+		ToPhone: template.ToPhone,
+		Message: template.Name,
+		IsOwner: true,
 	})
 	return nil
 }
@@ -100,9 +100,9 @@ func (s *whatsAppService) ReceiveMessage(ctx context.Context, message *dto.Messa
 		return err
 	}
 	connection.WriteMessage(ctx, valueobject.Message{
-		ToNumber: message.ToNumber,
-		Message:  message.Message,
-		IsOwner:  true,
+		ToPhone: message.ToPhone,
+		Message: message.Message,
+		IsOwner: true,
 	})
 	return nil
 }

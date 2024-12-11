@@ -22,7 +22,7 @@ type WebSocket interface {
 
 type webSocket struct {
 	connection       map[string]WebSocketConversation
-	whatsAppMediator mediator.WhatsApp
+	whatsAppMediator WebSocketMediator
 	serverConv       WebSocketServer
 }
 
@@ -55,7 +55,7 @@ func (s *webSocket) getConnection(ctx context.Context, w http.ResponseWriter, r 
 	// caso a conexão não exista
 	if err != nil {
 		hlog.Error("webSocket.HandleWebSocket", fmt.Sprintf("Error: %s", err))
-		newConversation, err := NewConversation(ctx, w, r, nil)
+		newConversation, err := NewConversation(ctx, w, r, nil, s.whatsAppMediator)
 		if err != nil {
 			return nil, err
 		}

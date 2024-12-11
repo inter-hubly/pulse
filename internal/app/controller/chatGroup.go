@@ -64,24 +64,25 @@ func (c *chatGroup) GetAllMessages(w http.ResponseWriter, r *http.Request) {
 	if toNumber == "" {
 		return
 	}
-	// ctx := hctx.Tenant.New(ownerId)
-	//
-	// message, err := c.whatsAppService.GetAllMessage(ctx, ownerId, toNumber)
-	// if err != nil {
-	// 	w.WriteHeader(http.StatusInternalServerError)
-	// }
-	// resp := make([]dto.Message, 0)
-	// for _, v := range message {
-	// 	resp = append(resp, dto.Message{
-	// 		Username: v.ProfileName,
-	// 		Message:  v.Message,
-	// 		IsOwner:  v.IsOwner,
-	// 	})
-	// }
-	// marshal, err := json.Marshal(resp)
-	// w.WriteHeader(http.StatusOK)
-	// w.Write(marshal)
-	// w.Header().Add("Content-Type", "application/json")
+	ctx := hctx.Tenant.New(ownerId)
+
+	message, err := c.whatsAppService.GetAllMessage(ctx, ownerId, toNumber)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+	resp := make([]dto.Message, 0)
+	for _, v := range message {
+		resp = append(resp, dto.Message{
+			Username: v.ProfileName,
+			Message:  v.Message,
+			IsOwner:  v.IsOwner,
+			ToPhone:  v.ToPhone,
+		})
+	}
+	marshal, err := json.Marshal(resp)
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(marshal)
 }
 
 func (c *chatGroup) ReceiveMessage(w http.ResponseWriter, r *http.Request) {
@@ -123,7 +124,7 @@ func (c *chatGroup) StartTemplate(w http.ResponseWriter, r *http.Request) {
 	}
 	template := dto.Template{
 		OwnerId:  ownerId,
-		ToNumber: toNumber,
+		ToPhone:  toNumber,
 		Name:     "hello_world",
 		Language: "en_US",
 	}

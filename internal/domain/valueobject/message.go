@@ -4,7 +4,8 @@ import "time"
 
 // Message struct representando uma mensagem
 type Message struct {
-	ToNumber    string `json:"toNumber,omitempty"`
+	MessageId   string `json:"messageId"`
+	ToPhone     string `json:"toPhone,omitempty"`
 	ProfileName string `json:"profileName,omitempty"`
 	Message     string `json:"message"`
 	Time        int64  `json:"time"`
@@ -23,9 +24,15 @@ func NewMessage(options ...Option) *Message {
 	return msg
 }
 
-func WithToNumber(toNumber string) Option {
+func WithMessageId(messageId string) Option {
+	return func(msg *Message) {
+		msg.MessageId = messageId
+	}
+}
+
+func WithToPhone(toPhone string) Option {
 	return func(m *Message) {
-		m.ToNumber = toNumber
+		m.ToPhone = toPhone
 	}
 }
 

@@ -85,12 +85,14 @@ func (w *whatsAppRepository) GetAllMessage(ctx context.Context, id, toId string)
 				valueobject.WithProfileName(sender),
 				valueobject.WithMessage(response["templateName"].(string)),
 				valueobject.WithIsOwner(isOwner),
+				valueobject.WithToPhone(response["toPhone"].(string)),
 			)
 		} else {
 			dto = valueobject.NewMessage(
 				valueobject.WithProfileName(sender),
 				valueobject.WithMessage(response["message"].(string)),
 				valueobject.WithIsOwner(isOwner),
+				valueobject.WithToPhone(response["toPhone"].(string)),
 			)
 		}
 		sms = append(sms, dto)

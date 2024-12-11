@@ -2,14 +2,14 @@ package dto
 
 type Message struct {
 	Username string `json:"username"`
-	ToNumber string `json:"toNumber"`
+	ToPhone  string `json:"toPhone"`
 	Message  string `json:"message"`
 	IsOwner  bool   `json:"isOwner"`
 }
 
 type Template struct {
 	OwnerId  string `json:"ownerId"`
-	ToNumber string `json:"toNumber"`
+	ToPhone  string `json:"toPhone"`
 	Name     string `json:"name"`
 	Language string `json:"language"`
 }
