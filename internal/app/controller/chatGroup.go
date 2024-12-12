@@ -60,13 +60,13 @@ func (c *chatGroup) GetAllMessages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	toNumber := r.Header.Get("to-number")
-	if toNumber == "" {
+	toPhone := r.Header.Get("to-phone")
+	if toPhone == "" {
 		return
 	}
 	ctx := hctx.Tenant.New(ownerId)
 
-	message, err := c.whatsAppService.GetAllMessage(ctx, ownerId, toNumber)
+	message, err := c.whatsAppService.GetAllMessage(ctx, ownerId, toPhone)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
