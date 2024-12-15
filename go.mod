@@ -2,13 +2,13 @@ module github.com/inter-hubly/pulse
 
 go 1.23.1
 
-replace github.com/inter-hubly/pilot => /home/saimon/Documents/Hubly/pilot //Linux
+//replace github.com/inter-hubly/pilot => /home/saimon/Documents/Hubly/pilot //Linux
 
 require (
 	github.com/golang/mock v1.6.0
+	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/stretchr/testify v1.9.0
-	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4
 )
 
 require (
@@ -22,7 +22,7 @@ require (
 	github.com/elastic/go-elasticsearch/v8 v8.16.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/inter-hubly/pilot v0.0.0
+	github.com/inter-hubly/pilot v0.0.1
 	github.com/pkg/errors v0.9.1 // indirect
 	go.opentelemetry.io/otel v1.28.0 // indirect
 	go.opentelemetry.io/otel/metric v1.28.0 // indirect

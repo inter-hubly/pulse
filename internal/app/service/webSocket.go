@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"github.com/gorilla/websocket"
 	"net/http"
 	"sync"
 
@@ -21,12 +22,14 @@ var (
 
 type webSocketService struct {
 	whatsAppMediator mediator.WhatsApp
+	connections      map[string]websocket.Conn
 }
 
 func NewWebSocket(w http.ResponseWriter, r *http.Request) *webSocketService {
 	webSocketOnce.Do(func() {
 		webSocket = &webSocketService{
 			whatsAppMediator: mediator.NewWhatsApp(),
+			connections:      make(map[string]websocket.Conn),
 		}
 	})
 	return webSocket
