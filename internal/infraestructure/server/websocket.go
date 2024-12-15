@@ -44,9 +44,13 @@ func (s *webSocket) HandleWebSocket(ctx context.Context, w http.ResponseWriter, 
 		hlog.Error("webSocket.HandleWebSocket", fmt.Sprintf("Error: %s", err))
 	}
 
-	connection.ReadMessage(ctx)
+	chanError := make(chan error, 1)
+	go connection.ReadMessage(ctx, chanError)
 
-	s.serverConv.DeleteConnection(ctx)
+	if <-chanError != nil {
+		hlog.Error("webSocket.HandleWebSocket", fmt.Sprintf("Error: %s", err))
+		s.serverConv.DeleteConnection(ctx)
+	}
 }
 
 func (s *webSocket) getConnection(ctx context.Context, w http.ResponseWriter, r *http.Request) (WebSocketConversation, error) {

@@ -13,22 +13,23 @@ var (
 )
 
 type controllers struct {
-	chatGroupController controller.ChatGroup
+	// chatGroupController controller.ChatGroup
+	webSocketController controller.WebSocket
 }
 
 func NewPulseControllers() {
 	controllersOnce.Do(func() {
 		chatGroupControllers = &controllers{
-			chatGroupController: controller.NewChatGroup(),
+			webSocketController: controller.NewWebSocket(),
 		}
 	})
 	chatGroupControllers.startControllers()
 }
 func (c *controllers) startControllers() {
-	http.HandleFunc("/ws", withCors(c.chatGroupController.Handle))
-	http.HandleFunc("/receive", withCors(c.chatGroupController.ReceiveMessage))
-	http.HandleFunc("/messages", withCors(c.chatGroupController.GetAllMessages))
-	http.HandleFunc("/template", withCors(c.chatGroupController.StartTemplate))
+	http.HandleFunc("/ws", withCors(c.webSocketController.Handle))
+	// http.HandleFunc("/receive", withCors(c.chatGroupController.ReceiveMessage))
+	// http.HandleFunc("/messages", withCors(c.chatGroupController.GetAllMessages))
+	// http.HandleFunc("/template", withCors(c.chatGroupController.StartTemplate))
 }
 
 func withCors(next http.HandlerFunc) http.HandlerFunc {

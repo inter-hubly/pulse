@@ -12,8 +12,7 @@ import (
 )
 
 type WebSocketConversation interface {
-	handleMessage(ctx context.Context)
-	ReadMessage(ctx context.Context)
+	ReadMessage(ctx context.Context, chanError chan error)
 	WriteMessage(ctx context.Context, msg valueobject.Message)
 }
 
@@ -49,18 +48,10 @@ func NewConversation(ctx context.Context,
 		messageChannel: make(chan valueobject.Message),
 		mediator:       mediator,
 	}
-	go conv.handleMessage(ctx)
 	return conv, nil
 }
 
-func (c *conversation) handleMessage(ctx context.Context) {
-	for msg := range c.messageChannel {
-		c.connection.WriteJSON(msg)
-		hlog.Info("webSocketServer.handleMessage", fmt.Sprint(msg))
-	}
-}
-
-func (c *conversation) ReadMessage(ctx context.Context) {
+func (c *conversation) ReadMessage(ctx context.Context, chanError chan error) {
 	for {
 		hlog.Info("webSocketServer.HandleWebSocket.Connection", "Reading Message")
 		_, message, err := c.connection.ReadMessage()
@@ -70,6 +61,7 @@ func (c *conversation) ReadMessage(ctx context.Context) {
 		}
 		var msg valueobject.Message
 		if err = json.Unmarshal(message, &msg); err != nil {
+			chanError <- err
 			hlog.Error("webSocketServer.HandleWebSocket.Unmarshal", fmt.Sprintf("err: %v", err))
 		}
 
@@ -78,5 +70,6 @@ func (c *conversation) ReadMessage(ctx context.Context) {
 }
 
 func (c *conversation) WriteMessage(ctx context.Context, msg valueobject.Message) {
-	c.messageChannel <- msg
+	c.connection.WriteJSON(msg)
+	hlog.Info("webSocketServer.handleMessage", fmt.Sprint(msg))
 }

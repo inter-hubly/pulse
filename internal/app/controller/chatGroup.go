@@ -99,13 +99,11 @@ func (c *chatGroup) ReceiveMessage(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	go func() {
-		var message dto.Message
-		if err = json.Unmarshal(body, &message); err != nil {
-			return
-		}
-		c.whatsAppService.ReceiveMessage(ctx, &message)
-	}()
+	var message dto.Message
+	if err = json.Unmarshal(body, &message); err != nil {
+		return
+	}
+	c.whatsAppService.ReceiveMessage(ctx, &message)
 
 	return
 }
