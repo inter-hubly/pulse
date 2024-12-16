@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"encoding/json"
 	"net/http"
 	"sync"
 
@@ -50,35 +49,35 @@ func (c *chatGroup) HandleStaticFiles(w http.ResponseWriter, r *http.Request) {
 	fs.ServeHTTP(w, r)
 }
 
-func (c *chatGroup) GetAllMessages(w http.ResponseWriter, r *http.Request) {
-	ownerId := r.URL.Query().Get("user")
-	if ownerId == "" {
-		return
-	}
-
-	toPhone := r.Header.Get("to-phone")
-	if toPhone == "" {
-		return
-	}
-	ctx := hctx.Tenant.New(ownerId)
-
-	message, err := c.whatsAppService.GetAllMessage(ctx, ownerId, toPhone)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-	}
-	resp := make([]dto.Message, 0)
-	for _, v := range message {
-		resp = append(resp, dto.Message{
-			Message: v.Message,
-			IsOwner: v.IsOwner,
-			ToPhone: v.ToPhone,
-		})
-	}
-	marshal, err := json.Marshal(resp)
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(marshal)
-}
+// func (c *chatGroup) GetAllMessages(w http.ResponseWriter, r *http.Request) {
+// 	ownerId := r.URL.Query().Get("user")
+// 	if ownerId == "" {
+// 		return
+// 	}
+//
+// 	toPhone := r.Header.Get("to-phone")
+// 	if toPhone == "" {
+// 		return
+// 	}
+// 	ctx := hctx.Tenant.New(ownerId)
+//
+// 	message, err := c.whatsAppService.GetAllMessage(ctx, ownerId, toPhone)
+// 	if err != nil {
+// 		w.WriteHeader(http.StatusInternalServerError)
+// 	}
+// 	resp := make([]dto.Message, 0)
+// 	for _, v := range message {
+// 		resp = append(resp, dto.Message{
+// 			Message: v.Message,
+// 			IsOwner: v.IsOwner,
+// 			ToPhone: v.ToPhone,
+// 		})
+// 	}
+// 	marshal, err := json.Marshal(resp)
+// 	w.Header().Add("Content-Type", "application/json")
+// 	w.WriteHeader(http.StatusOK)
+// 	w.Write(marshal)
+// }
 
 // func (c *chatGroup) ReceiveMessage(w http.ResponseWriter, r *http.Request) {
 // 	ownerId := r.URL.Query().Get("user")
@@ -116,13 +115,12 @@ func (c *chatGroup) StartTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	template := dto.Template{
-		OwnerId:  ownerId,
 		ToPhone:  toNumber,
 		Name:     "hello_world",
 		Language: "en_US",
 	}
 
-	if err := c.whatsAppService.StartTemplate(ctx, ownerId, &template); err != nil {
+	if err := c.whatsAppService.StartTemplate(ctx, &template); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 	w.WriteHeader(http.StatusOK)

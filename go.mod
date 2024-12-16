@@ -2,8 +2,6 @@ module github.com/inter-hubly/pulse
 
 go 1.23.1
 
-//replace github.com/inter-hubly/pilot => /home/saimon/Documents/Hubly/pilot //Linux
-
 require (
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.6.0

@@ -28,8 +28,8 @@ func NewPulseControllers() {
 func (c *controllers) startControllers() {
 	http.HandleFunc("/ws", withCors(c.webSocketController.Handle))
 	http.HandleFunc("/receive", withCors(c.webSocketController.ReceiveMessage))
+	http.HandleFunc("/start-template", withCors(c.webSocketController.StartTemplate))
 	// http.HandleFunc("/messages", withCors(c.chatGroupController.GetAllMessages))
-	// http.HandleFunc("/template", withCors(c.chatGroupController.StartTemplate))
 }
 
 func withCors(next http.HandlerFunc) http.HandlerFunc {
