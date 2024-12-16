@@ -27,7 +27,7 @@ func NewPulseControllers() {
 }
 func (c *controllers) startControllers() {
 	http.HandleFunc("/ws", withCors(c.webSocketController.Handle))
-	// http.HandleFunc("/receive", withCors(c.chatGroupController.ReceiveMessage))
+	http.HandleFunc("/receive", withCors(c.webSocketController.ReceiveMessage))
 	// http.HandleFunc("/messages", withCors(c.chatGroupController.GetAllMessages))
 	// http.HandleFunc("/template", withCors(c.chatGroupController.StartTemplate))
 }

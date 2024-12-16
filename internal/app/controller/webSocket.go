@@ -1,18 +1,20 @@
 package controller
 
 import (
-	"fmt"
-	"github.com/gorilla/websocket"
-	"github.com/inter-hubly/pilot/hctx"
+	"encoding/json"
+	"io"
 	"net/http"
 	"sync"
 
+	"github.com/inter-hubly/pilot/hctx"
+	"github.com/inter-hubly/pulse/internal/domain/dto"
+
 	"github.com/inter-hubly/pulse/internal/app/service"
-	"github.com/inter-hubly/pulse/internal/infraestructure/server"
 )
 
 type WebSocket interface {
 	Handle(w http.ResponseWriter, r *http.Request)
+	ReceiveMessage(w http.ResponseWriter, r *http.Request)
 }
 
 var (
@@ -22,13 +24,12 @@ var (
 
 type webSocket struct {
 	webSocketService service.WebSocket
-	connections      map[string]websocket.Conn
 }
 
 func NewWebSocket() *webSocket {
 	webSocketOnce.Do(func() {
 		webSocketController = &webSocket{
-			webSocketService: server.NewWebSocket(),
+			webSocketService: service.NewWebSocket(),
 		}
 	})
 	return webSocketController
@@ -39,27 +40,35 @@ func (ws *webSocket) Handle(w http.ResponseWriter, r *http.Request) {
 	if ownerId == "" {
 		return
 	}
+	ctx := hctx.Tenant.New(ownerId)
 
-	toPhone := r.Header.Get("to-phone")
-	if toPhone == "" {
+	if err := ws.webSocketService.CreateConnection(ctx, w, r); err != nil {
 		return
 	}
+
+	go ws.webSocketService.ReceiveMessageFromClient(ctx)
+}
+
+func (ws *webSocket) ReceiveMessage(w http.ResponseWriter, r *http.Request) {
+	ownerId := r.URL.Query().Get("user")
+	if ownerId == "" {
+		return
+	}
+
 	ctx := hctx.Tenant.New(ownerId)
-	upgrader := websocket.Upgrader{
-		CheckOrigin: func(r *http.Request) bool {
-			// Permitir qualquer origem
-			return true
-		},
-	}
-	if conn, exists := ws.connections[ownerId]; exists {
 
-	} else {
-		conn, err := upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			fmt.Println("Erro ao atualizar para WebSocket:", err)
-			return
-		}
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return
+	}
+	defer r.Body.Close()
+
+	var message dto.Message
+	if err = json.Unmarshal(body, &message); err != nil {
+		return
 	}
 
-	ws.webSocketService.ReceiveMessageFromClient(ctx, ownerId, toPhone)
+	if err = ws.webSocketService.SendMessageToClient(ctx, &message); err != nil {
+		return
+	}
 }

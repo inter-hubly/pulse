@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+
 	"github.com/gorilla/websocket"
 	"github.com/inter-hubly/pulse/internal/domain/valueobject"
 
@@ -21,11 +22,10 @@ type messageGroups struct {
 	ownerId       string
 }
 
-func NewMessageGroups(ownerId string, connection *websocket.Conn) *messageGroups {
+func NewMessageGroups(ownerId string) *messageGroups {
 	return &messageGroups{
 		ownerId:       ownerId,
 		conversations: make(map[string]entity.Conversation),
-		connection:    connection,
 	}
 }
 

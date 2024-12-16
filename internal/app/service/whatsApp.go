@@ -12,7 +12,6 @@ import (
 	"github.com/inter-hubly/pulse/internal/app/mediator"
 	"github.com/inter-hubly/pulse/internal/domain/dto"
 	"github.com/inter-hubly/pulse/internal/domain/valueobject"
-	"github.com/inter-hubly/pulse/internal/infraestructure/server"
 )
 
 type WhatsApp interface {
@@ -30,7 +29,6 @@ var (
 type whatsAppService struct {
 	whatsAppMediator mediator.WhatsApp
 	whatsAppBroker   broker.Connection
-	webSocketServer  server.WebSocket
 }
 
 func NewWhatsApp() *whatsAppService {
@@ -38,7 +36,6 @@ func NewWhatsApp() *whatsAppService {
 		whatsApp = &whatsAppService{
 			whatsAppMediator: mediator.NewWhatsApp(),
 			whatsAppBroker:   broker.GetConnection(),
-			webSocketServer:  server.NewWebSocket(),
 		}
 	})
 	return whatsApp
@@ -82,27 +79,27 @@ func (s *whatsAppService) StartTemplate(ctx context.Context, ownerId string, tem
 		return err
 	}
 
-	connection, err := s.webSocketServer.GetConnection(ctx)
-	if err != nil {
-		return err
-	}
-	connection.WriteMessage(ctx, valueobject.Message{
-		ToPhone: template.ToPhone,
-		Message: template.Name,
-		IsOwner: true,
-	})
+	// connection, err := s.webSocketServer.GetConnection(ctx)
+	// if err != nil {
+	// 	return err
+	// }
+	// connection.WriteMessage(ctx, valueobject.Message{
+	// 	ToPhone: template.ToPhone,
+	// 	Message: template.Name,
+	// 	IsOwner: true,
+	// })
 	return nil
 }
 
 func (s *whatsAppService) ReceiveMessage(ctx context.Context, message *dto.Message) error {
-	connection, err := s.webSocketServer.GetConnection(ctx)
-	if err != nil {
-		return err
-	}
-	connection.WriteMessage(ctx, valueobject.Message{
-		ToPhone: message.ToPhone,
-		Message: message.Message,
-		IsOwner: true,
-	})
+	// connection, err := s.webSocketServer.GetConnection(ctx)
+	// if err != nil {
+	// 	return err
+	// }
+	// connection.WriteMessage(ctx, valueobject.Message{
+	// 	ToPhone: message.ToPhone,
+	// 	Message: message.Message,
+	// 	IsOwner: true,
+	// })
 	return nil
 }
