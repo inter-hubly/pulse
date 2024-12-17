@@ -13,7 +13,6 @@ var (
 )
 
 type controllers struct {
-	// chatGroupController controller.ChatGroup
 	webSocketController controller.WebSocket
 }
 
@@ -29,7 +28,6 @@ func (c *controllers) startControllers() {
 	http.HandleFunc("/ws", withCors(c.webSocketController.Handle))
 	http.HandleFunc("/receive", withCors(c.webSocketController.ReceiveMessage))
 	http.HandleFunc("/start-template", withCors(c.webSocketController.StartTemplate))
-	// http.HandleFunc("/messages", withCors(c.chatGroupController.GetAllMessages))
 }
 
 func withCors(next http.HandlerFunc) http.HandlerFunc {
