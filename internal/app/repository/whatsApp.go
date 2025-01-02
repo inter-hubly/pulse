@@ -33,6 +33,7 @@ func NewWhatsApp() *whatsAppRepository {
 
 func (w *whatsAppRepository) GetAllMessage(ctx context.Context, id, toId string) ([]*valueobject.Message, error) {
 	query := map[string]interface{}{
+		"size": 100,
 		"query": map[string]interface{}{
 			"bool": map[string]interface{}{
 				"must": []map[string]interface{}{
