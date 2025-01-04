@@ -1,9 +1,10 @@
 package dto
 
 type Message struct {
-	ToPhone string `json:"toPhone"`
-	Message string `json:"message"`
-	IsOwner bool   `json:"isOwner"`
+	ProfileName string `json:"profileName,omitempty"`
+	ToPhone     string `json:"toPhone"`
+	Message     string `json:"message"`
+	IsOwner     bool   `json:"isOwner"`
 }
 
 type Template struct {

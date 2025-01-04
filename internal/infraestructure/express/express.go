@@ -6,9 +6,8 @@ import (
 	"github.com/inter-hubly/pilot/server"
 )
 
-var exchangeBroker = "linker"
-
 func Start() {
+	var exchangeBroker = "linker"
 
 	rabbitmq.NewRabbitMQ(exchangeBroker, "topic")
 
