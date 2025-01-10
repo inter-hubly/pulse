@@ -9,7 +9,7 @@ import (
 func Start() {
 	var exchangeBroker = "linker"
 
-	rabbitmq.NewRabbitMQ(exchangeBroker, "topic")
+	rabbitmq.NewRabbitMQ(exchangeBroker, "topic", rabbitmq.WithURL(server.GetAmpqConfig().Host))
 
 	elasticsearch.NewConn(
 		elasticsearch.WithUrl([]string{server.GetElasticSearch().Host}),

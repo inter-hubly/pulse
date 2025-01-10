@@ -13,8 +13,7 @@ func main() {
 	server.FillConfigEnvironment()
 	express.Start()
 
-	log.Println("HTTP server started on :8082")
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", server.GetEnvironment().Port), nil); err != nil {
+	if err := http.ListenAndServe(fmt.Sprintf(":%s", server.GetEnvironment().Port), nil); err != nil {
 		log.Fatal(err)
 	}
 }
