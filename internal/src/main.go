@@ -1,20 +1,25 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 
+	"github.com/inter-hubly/pilot/hlog"
 	"github.com/inter-hubly/pilot/server"
 	"github.com/inter-hubly/pulse/internal/infraestructure/express"
 )
 
 func main() {
-	server.FillConfigEnvironment()
-	express.Start()
+	ctx := context.Background()
 
-	log.Println("HTTP server started on :8082")
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", server.GetEnvironment().Port), nil); err != nil {
+	server.FillConfigEnvironment(ctx)
+
+	express.Start(ctx)
+
+	hlog.Info(ctx, "main", fmt.Sprintf("Server start in port %s", server.GetEnvironment().Port))
+	if err := http.ListenAndServe(fmt.Sprintf(":%s", server.GetEnvironment().Port), nil); err != nil {
 		log.Fatal(err)
 	}
 }

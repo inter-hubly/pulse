@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/inter-hubly/pilot/database/elasticsearch"
@@ -15,7 +16,7 @@ type WhatsApp interface {
 var (
 	whatsAppOnce sync.Once
 	whatsApp     *whatsAppRepository
-	elasticIndex = "whatsapp.ready"
+	elasticIndex = "whatsapp"
 )
 
 type whatsAppRepository struct {
@@ -33,14 +34,10 @@ func NewWhatsApp() *whatsAppRepository {
 
 func (w *whatsAppRepository) GetAllMessage(ctx context.Context, id, toId string) ([]*valueobject.Message, error) {
 	query := map[string]interface{}{
+		"size": 100,
 		"query": map[string]interface{}{
 			"bool": map[string]interface{}{
 				"must": []map[string]interface{}{
-					{
-						"match": map[string]interface{}{
-							"ownerId": id,
-						},
-					},
 					{
 						"match": map[string]interface{}{
 							"toPhone": toId,
@@ -51,7 +48,7 @@ func (w *whatsAppRepository) GetAllMessage(ctx context.Context, id, toId string)
 		},
 	}
 
-	elasticResponse, err := w.elastic.FindAll(ctx, elasticIndex, query)
+	elasticResponse, err := w.elastic.FindAll(ctx, fmt.Sprintf("%s.%s", id, elasticIndex), query)
 	if err != nil {
 		return nil, err
 	}

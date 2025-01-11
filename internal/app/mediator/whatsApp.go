@@ -51,7 +51,7 @@ func (m *whatsAppMediator) GetConversation(ctx context.Context, ownerId, ToId st
 	var err error
 	conversation, err = m.whatsAppCache.GetConversationById(ctx, ownerId, ToId)
 	if err != nil {
-		hlog.Debug("whatsAppMediator.GetConversation", "Get info in repository")
+		hlog.Debug(ctx, "whatsAppMediator.GetConversation", "Get info in repository")
 		msg, err := m.whatsAppRepository.GetAllMessage(ctx, ownerId, ToId)
 		if err != nil {
 			return nil, err
@@ -75,11 +75,11 @@ func (m *whatsAppMediator) SendMessage(ctx context.Context, ownerId string, msg 
 
 	marshal, err := json.Marshal(sendMessage)
 	if err != nil {
-		hlog.Debug("whatsAppMediator.SendMessage", fmt.Sprintf("Marshal json fail %s", err))
+		hlog.Debug(ctx, "whatsAppMediator.SendMessage", fmt.Sprintf("Marshal json fail %s", err))
 		return err
 	}
-	if err = m.broker.Publish("whatsapp.send", marshal); err != nil {
-		hlog.Debug("whatsAppMediator.SendMessage", fmt.Sprintf("Publish message fail %s", err))
+	if err = m.broker.Publish(ctx, "whatsapp.send", marshal); err != nil {
+		hlog.Debug(ctx, "whatsAppMediator.SendMessage", fmt.Sprintf("Publish message fail %s", err))
 		return err
 	}
 	conversation, err := m.GetConversation(ctx, ownerId, msg.ToPhone)
@@ -127,8 +127,8 @@ func (m *whatsAppMediator) StartTemplate(ctx context.Context, ownerId string, te
 		log.Printf("Error marshalling template: %v", err)
 	}
 
-	if err = m.broker.Publish("whatsapp.start", marshal); err != nil {
-		hlog.Error("whatsAppService.SendMessage", fmt.Sprintf("error sending template :%s", err))
+	if err = m.broker.Publish(ctx, "whatsapp.start", marshal); err != nil {
+		hlog.Error(ctx, "whatsAppService.SendMessage", fmt.Sprintf("error sending template :%s", err))
 	}
 	conversation, err := m.GetConversation(ctx, ownerId, template.ToPhone)
 	if err != nil {

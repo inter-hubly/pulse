@@ -2,7 +2,11 @@ package aggregation
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+
+	"github.com/gorilla/websocket"
+	"github.com/inter-hubly/pulse/internal/domain/valueobject"
 
 	"github.com/inter-hubly/pulse/internal/domain/entity"
 )
@@ -13,8 +17,9 @@ type MessageGroups interface {
 }
 
 type messageGroups struct {
-	ownerId       string
 	conversations map[string]entity.Conversation
+	connection    *websocket.Conn
+	ownerId       string
 }
 
 func NewMessageGroups(ownerId string) *messageGroups {
@@ -33,4 +38,12 @@ func (w *messageGroups) GetConversationById(ctx context.Context, toId string) (e
 		return conversation, nil
 	}
 	return nil, errors.New("conversation not found")
+}
+
+func (w *messageGroups) SendMessageToClient(ctx context.Context, msg valueobject.Message) error {
+	marshal, err := json.Marshal(msg)
+	if err != nil {
+		return err
+	}
+	return w.connection.WriteMessage(websocket.TextMessage, marshal)
 }
