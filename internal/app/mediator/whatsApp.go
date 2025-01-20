@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/inter-hubly/pilot/broker"
+	"github.com/inter-hubly/pilot/domain/base"
 	"github.com/inter-hubly/pilot/hctx"
 	"github.com/inter-hubly/pilot/hlog"
 	"github.com/inter-hubly/pulse/internal/app/cache"
@@ -19,7 +20,7 @@ import (
 
 type WhatsApp interface {
 	GetConversation(ctx context.Context, ownerId, ToId string) (entity.Conversation, error)
-	SendMessage(ctx context.Context, ownerId string, msg *valueobject.Message) error
+	SendMessage(ctx context.Context, msg *valueobject.Message) error
 	ReceiveMessage(ctx context.Context, ownerId string, msg dto.Message) error
 	StartTemplate(ctx context.Context, ownerId string, msg *dto.Template) error
 }
@@ -63,14 +64,13 @@ func (m *whatsAppMediator) GetConversation(ctx context.Context, ownerId, ToId st
 	return conversation, nil
 }
 
-func (m *whatsAppMediator) SendMessage(ctx context.Context, ownerId string, msg *valueobject.Message) error {
+func (m *whatsAppMediator) SendMessage(ctx context.Context, msg *valueobject.Message) error {
+	tenantId := hctx.Tenant.Get(ctx)
 	msg.IsOwner = true
-	sendMessage := senderMessage{
+
+	sendMessage := base.SendTextDto{
+		To:      msg.ToPhone,
 		Message: msg.Message,
-		SenderAndReceiver: senderAndReceiverDto{
-			OwnerId: ownerId,
-			To:      msg.ToPhone,
-		},
 	}
 
 	marshal, err := json.Marshal(sendMessage)
@@ -82,7 +82,7 @@ func (m *whatsAppMediator) SendMessage(ctx context.Context, ownerId string, msg 
 		hlog.Debug(ctx, "whatsAppMediator.SendMessage", fmt.Sprintf("Publish message fail %s", err))
 		return err
 	}
-	conversation, err := m.GetConversation(ctx, ownerId, msg.ToPhone)
+	conversation, err := m.GetConversation(ctx, tenantId, msg.ToPhone)
 	if err != nil {
 		return err
 	}
@@ -144,15 +144,5 @@ func (m *whatsAppMediator) StartTemplate(ctx context.Context, ownerId string, te
 }
 
 func (m *whatsAppMediator) Notify(ctx context.Context, msg valueobject.Message) error {
-	tenantId := hctx.Tenant.Get(ctx)
-	return m.SendMessage(ctx, tenantId, &msg)
-}
-
-type senderMessage struct {
-	SenderAndReceiver senderAndReceiverDto `json:"senderAndReceiver"`
-	Message           string               `json:"message"`
-}
-type senderAndReceiverDto struct {
-	OwnerId string `json:"OwnerId"`
-	To      string `json:"to"`
+	return m.SendMessage(ctx, &msg)
 }
