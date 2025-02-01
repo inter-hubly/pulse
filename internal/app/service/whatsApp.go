@@ -42,11 +42,3 @@ func (s *whatsAppService) StartTemplate(ctx context.Context, template *dto.Templ
 
 	return nil
 }
-
-// func (s *whatsAppService) GetAllMessage(ctx context.Context, ownerId, toId string) ([]*valueobject.Message, error) {
-// 	conversation, err := s.whatsAppMediator.GetConversation(ctx, ownerId, toId)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return conversation.GetConversation(ctx).GetMessages(ctx), nil
-// }
