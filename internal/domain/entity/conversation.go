@@ -3,7 +3,7 @@ package entity
 import (
 	"context"
 
-	"github.com/inter-hubly/pulse/internal/domain/valueobject"
+	"github.com/inter-hubly/pilot/domain/base"
 )
 
 type ConversationType string
@@ -15,27 +15,27 @@ const (
 type Conversation interface {
 	GetId(ctx context.Context) string
 	GetConversation(ctx context.Context) *conversation
-	PushConversation(ctx context.Context, v []*valueobject.Message)
-	PushMessage(ctx context.Context, v *valueobject.Message)
-	GetMessages(ctx context.Context) []*valueobject.Message
+	PushConversation(ctx context.Context, v []base.SendTextDto)
+	PushMessage(ctx context.Context, v *base.SendTextDto)
+	GetMessages(ctx context.Context) []base.SendTextDto
 }
 
 type conversation struct {
-	id               string                 `json:"id"`
-	conversationType ConversationType       `json:"type"`
-	messages         []*valueobject.Message `json:"messages"`
+	id               string             `json:"id"`
+	conversationType ConversationType   `json:"type"`
+	messages         []base.SendTextDto `json:"messages"`
 }
 
 func NewConversation(ctx context.Context, id string, convType ConversationType) *conversation {
 	return &conversation{
 		id:               id,
 		conversationType: convType,
-		messages:         make([]*valueobject.Message, 0),
+		messages:         make([]base.SendTextDto, 0),
 	}
 }
 
 // PushConversation need get all conversation
-func (c *conversation) PushConversation(ctx context.Context, v []*valueobject.Message) {
+func (c *conversation) PushConversation(ctx context.Context, v []base.SendTextDto) {
 	c.messages = append(c.messages, v...)
 }
 
@@ -44,11 +44,11 @@ func (c *conversation) GetConversation(ctx context.Context) *conversation {
 	return c
 }
 
-func (c *conversation) PushMessage(ctx context.Context, v *valueobject.Message) {
-	c.messages = append(c.messages, v)
+func (c *conversation) PushMessage(ctx context.Context, v *base.SendTextDto) {
+	c.messages = append(c.messages, *v)
 }
 
-func (c *conversation) GetMessages(ctx context.Context) []*valueobject.Message {
+func (c *conversation) GetMessages(ctx context.Context) []base.SendTextDto {
 	return c.messages
 }
 

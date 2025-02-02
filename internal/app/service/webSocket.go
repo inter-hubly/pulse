@@ -8,12 +8,11 @@ import (
 	"sync"
 
 	"github.com/gorilla/websocket"
+	"github.com/inter-hubly/pilot/domain/base"
 	"github.com/inter-hubly/pilot/hctx"
 	"github.com/inter-hubly/pilot/hlog"
-	"github.com/inter-hubly/pulse/internal/domain/dto"
-	"github.com/inter-hubly/pulse/internal/domain/valueobject"
-
 	"github.com/inter-hubly/pulse/internal/app/mediator"
+	"github.com/inter-hubly/pulse/internal/domain/dto"
 )
 
 type WebSocket interface {
@@ -74,7 +73,7 @@ func (s *webSocketService) ReceiveMessageFromClient(ctx context.Context) {
 			s.channelError <- tenant
 			break
 		}
-		var valueObj valueobject.Message
+		var valueObj base.SendTextDto
 		if err = json.Unmarshal(message, &valueObj); err != nil {
 			hlog.Info(ctx, "webSocketService.ReceiveMessageFromClient", fmt.Sprintf("error when message unmarshal %v", err))
 		}

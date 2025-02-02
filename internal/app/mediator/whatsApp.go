@@ -15,12 +15,11 @@ import (
 	"github.com/inter-hubly/pulse/internal/app/repository"
 	"github.com/inter-hubly/pulse/internal/domain/dto"
 	"github.com/inter-hubly/pulse/internal/domain/entity"
-	"github.com/inter-hubly/pulse/internal/domain/valueobject"
 )
 
 type WhatsApp interface {
 	GetConversation(ctx context.Context, ownerId, ToId string) (entity.Conversation, error)
-	SendMessage(ctx context.Context, msg *valueobject.Message) error
+	SendMessage(ctx context.Context, msg *base.SendTextDto) error
 	ReceiveMessage(ctx context.Context, ownerId string, msg dto.Message) error
 	StartTemplate(ctx context.Context, ownerId string, msg *dto.Template) error
 }
@@ -53,23 +52,33 @@ func (m *whatsAppMediator) GetConversation(ctx context.Context, ownerId, ToId st
 	conversation, err = m.whatsAppCache.GetConversationById(ctx, ownerId, ToId)
 	if err != nil {
 		hlog.Debug(ctx, "whatsAppMediator.GetConversation", "Get info in repository")
-		msg, err := m.whatsAppRepository.GetAllMessage(ctx, ownerId, ToId)
+		allMessage, err := m.whatsAppRepository.GetAllMessage(ctx, ownerId, ToId)
 		if err != nil {
-			return nil, err
+			hlog.Debug(ctx, "whatsAppMediator.GetConversation", "Get info in repository")
+			return conversation, err
 		}
+		messages := make([]base.SendTextDto, 0, len(allMessage))
+		for _, ms := range allMessage {
+			messages = append(messages, base.SendTextDto{
+				To:      ms.ToPhone,
+				Message: ms.Message,
+				IsOwner: ms.IsOwner,
+			})
+		}
+
 		conversation = entity.NewConversation(ctx, ownerId, entity.ConversationTypeWhatsApp)
-		conversation.PushConversation(ctx, msg)
+		conversation.PushConversation(ctx, messages)
 		m.whatsAppCache.SaveConversation(ctx, ToId, conversation)
 	}
 	return conversation, nil
 }
 
-func (m *whatsAppMediator) SendMessage(ctx context.Context, msg *valueobject.Message) error {
+func (m *whatsAppMediator) SendMessage(ctx context.Context, msg *base.SendTextDto) error {
 	tenantId := hctx.Tenant.Get(ctx)
 	msg.IsOwner = true
 
 	sendMessage := base.SendTextDto{
-		To:      msg.ToPhone,
+		To:      msg.To,
 		Message: msg.Message,
 	}
 
@@ -82,7 +91,7 @@ func (m *whatsAppMediator) SendMessage(ctx context.Context, msg *valueobject.Mes
 		hlog.Debug(ctx, "whatsAppMediator.SendMessage", fmt.Sprintf("Publish message fail %s", err))
 		return err
 	}
-	conversation, err := m.GetConversation(ctx, tenantId, msg.ToPhone)
+	conversation, err := m.GetConversation(ctx, tenantId, msg.To)
 	if err != nil {
 		return err
 	}
@@ -96,12 +105,13 @@ func (m *whatsAppMediator) ReceiveMessage(ctx context.Context, ownerId string, m
 	if err != nil {
 		return err
 	}
-	message := valueobject.NewMessage(
-		valueobject.WithToPhone(msg.ToPhone),
-		valueobject.WithMessage(msg.Message),
-		valueobject.WithIsOwner(false),
-	)
-	conversation.PushMessage(ctx, message)
+	message := base.SendTextDto{
+		To:      msg.ToPhone,
+		Message: msg.Message,
+		IsOwner: false,
+	}
+
+	conversation.PushMessage(ctx, &message)
 
 	return nil
 }
@@ -134,15 +144,15 @@ func (m *whatsAppMediator) StartTemplate(ctx context.Context, ownerId string, te
 	if err != nil {
 		return err
 	}
-	message := valueobject.NewMessage(
-		valueobject.WithToPhone(template.ToPhone),
-		valueobject.WithProfileName(template.Name),
-		valueobject.WithIsOwner(true),
-	)
-	conversation.PushMessage(ctx, message)
+
+	conversation.PushMessage(ctx, &base.SendTextDto{
+		To:      template.ToPhone,
+		Message: "Start template",
+		IsOwner: true,
+	})
 	return nil
 }
 
-func (m *whatsAppMediator) Notify(ctx context.Context, msg valueobject.Message) error {
+func (m *whatsAppMediator) Notify(ctx context.Context, msg base.SendTextDto) error {
 	return m.SendMessage(ctx, &msg)
 }
