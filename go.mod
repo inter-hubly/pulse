@@ -3,7 +3,7 @@ module github.com/inter-hubly/pulse
 go 1.23.1
 
 //replace github.com/inter-hubly/pilot => /Users/saimonribeirosilva/Hubly/pilot // Mac
-replace github.com/inter-hubly/pilot => /home/saimon/Documents/Hubly/pilot //Linux
+//replace github.com/inter-hubly/pilot => /home/saimon/Documents/Hubly/pilot //Linux
 
 require (
 	github.com/golang/mock v1.6.0
@@ -33,7 +33,7 @@ require (
 	github.com/elastic/go-elasticsearch/v8 v8.16.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/inter-hubly/pilot v0.1.2
+	github.com/inter-hubly/pilot v0.1.3
 	github.com/pkg/errors v0.9.1 // indirect
 	go.opentelemetry.io/otel v1.28.0 // indirect
 	go.opentelemetry.io/otel/metric v1.28.0 // indirect
