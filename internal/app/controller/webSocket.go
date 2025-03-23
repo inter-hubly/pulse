@@ -44,12 +44,12 @@ func NewWebSocket() *webSocket {
 
 func (ws *webSocket) Handle(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
-	// ctx, err := ws.getUserId(r)
-	// if err != nil {
-	// 	hlog.Error(ctx, "webSocket.StartTemplate", fmt.Sprintf("Error when get user id: %s", err.Error()))
-	// 	http.Error(w, "error get user id", http.StatusInternalServerError)
-	// 	return
-	// }
+	ctx, err := ws.getUserId(r)
+	if err != nil {
+		hlog.Error(ctx, "webSocket.StartTemplate", fmt.Sprintf("Error when get user id: %s", err.Error()))
+		http.Error(w, "error get user id", http.StatusInternalServerError)
+		return
+	}
 
 	if err := ws.webSocketService.CreateConnection(ctx, w, r); err != nil {
 		hlog.Error(ctx, "webSocket.Handle", fmt.Sprintf("error create connection: %s", err.Error()))
